@@ -71,7 +71,7 @@ Definition negb (b : bool) : bool :=
   end.
 
 Definition andb (b1 : bool) (b2 : bool) : bool :=
-  match b1 with
+ match b1 with
   | true => b2
   | false => false
   end.
@@ -82,7 +82,7 @@ Definition orb (b1 : bool) (b2 : bool) : bool :=
   | false => b2
   end.
 
-(*
+(**
 Unit tests:
 Compute a complete truth table.
  *)
@@ -96,9 +96,9 @@ Notation "x || y" := (orb x y).
 Example test_orb5 : false || false || true = true.
 Proof. simpl. reflexivity. Qed.
 
-(*
+(**
 Use square bracket to delimit fragments of Rocq code within comments.
-*)
+ *)
 
 (* * Conditional Expressions * *)
 
@@ -128,4 +128,60 @@ Definition invert (x : bw) : bw :=
 
 Example test_invert_black : invert bw_black = bw_white.
 Proof. simpl. reflexivity. Qed.
+
+(* * Types * *)
+(**
+Expressions in Rocq has a type describing what sort of thing it computes.
+The Check command asks Rocq to print the type of an expression. 
+ *)
+
+Check true
+  : bool.
+
+Check (negb true)
+  : bool.
+
+(** 
+Function types: Functions like negb itself are also data values, just like true and flase. Their types are called function types, and they are written with arrows.
+ *)
+
+Check negb
+  : bool -> bool.
+
+(**
+Function types: 
+   bool -> bool pronounced "bool arrow bool"
+ *)
+
+(* * New Types from Old * *)
+
+(**
+Enumerated types: their definitions explicitly enumerate a finite set of elements, called constructors.
+ *)
+
+Inductive rgb : Type :=
+  | red
+  | green
+  | blue.
+
+Inductive color : Type :=
+  | black
+  | white
+  | primary (p : rgb).
+
+(**
+Inductive definition does two things:
+  1. introduces a set of new constructors.
+  2. groups them into a new named type.
+*)
+
+(**
+Constructor expressions are formed by applying a constructor to zero or more other constructors or constructor expressions, obeying the declared number and types of the constructor arguments
+Notice that there are no realization of what "primary red" is.
+*)
+
+(**
+We can define functions on colors using pattern matching just as we did for day and bool.
+*)
+
 
