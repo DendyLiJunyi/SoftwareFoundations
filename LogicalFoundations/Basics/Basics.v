@@ -184,4 +184,32 @@ Notice that there are no realization of what "primary red" is.
 We can define functions on colors using pattern matching just as we did for day and bool.
 *)
 
+Definition monochrome (c : color) : bool :=
+  match c with
+  | black => true
+  | white => true
+  | primary p => false
+  end.
+
+(**
+"primary red" is a valid expression here
+ *)
+
+Check primary red
+  : color.
+
+Definition isred (c : color) : bool :=
+  match c with
+  | black => false
+  | white => false
+  | primary red => true
+  | primary _ => false
+  end.
+
+(**
+"primary _" means apply all rgb constructor to primary except red.
+ *)
+
+Example test_isred : isred white = false.
+Proof. simpl. reflexivity. Qed.
 
