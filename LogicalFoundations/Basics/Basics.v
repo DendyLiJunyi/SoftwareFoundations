@@ -213,3 +213,20 @@ Definition isred (c : color) : bool :=
 Example test_isred : isred white = false.
 Proof. simpl. reflexivity. Qed.
 
+(* * Modules * *)
+
+Module Playground.
+  Definition foo : rgb := blue.
+End Playground.
+
+Definition foo : bool := true.
+
+Check foo.
+Check Playground.foo.
+
+(**
+It's kind of like the namespace in Lean
+ *)
+
+
+
