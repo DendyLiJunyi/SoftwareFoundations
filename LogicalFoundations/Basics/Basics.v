@@ -228,5 +228,144 @@ Check Playground.foo.
 It's kind of like the namespace in Lean
  *)
 
+(* * Tuples * *)
 
+Module TuplePlayground.
 
+(**
+Single constructor with multiple parameters can be used to create a tuple type.
+ *)
+
+Inductive bit : Type :=
+  | B1
+  | B0.
+
+Inductive nybble : Type :=
+  | bits (b0 b1 b2 b3 : bit).
+
+Check (bits B1 B0 B0 B1).
+
+(**
+  "bits" constructor acts as a wrapper for its contents.
+   Unwrapping can be done by pattern-matching.
+  *)
+
+Definition all_zero (nb : nybble) : bool :=
+  match nb with
+  | (bits B0 B0 B0 B0) => true
+  | (bits _ _ _ _) => false
+  end.
+
+(**
+  _ is a wildcard pattern, which avoids inventing variable names.
+  *)
+
+Compute (all_zero (bits B1 B1 B0 B0)).
+
+Compute (all_zero (bits B0 B0 B0 B0)).
+
+End TuplePlayground.
+
+(* * Numbers * *)
+
+Module NatPlayground.
+
+(**
+   Natural numbers are infinite set, all the types we build before are finite
+   *)
+
+(**
+   Different representation of numbers can be useful in different environments.
+   We want our definition of natural numbers can make the proof simpler.
+   *)
+
+Inductive nat : Type :=
+  | O
+  | S (n : nat).
+(**
+  In Rocq, 0 is not a valid constructor name, so we use O instead.
+
+  This is an unary representation, by introducing 0 and S(Successor).
+
+  One also need to notice that by writing the Inductive definition we aren't give the constructors a realization.
+  They have no meaning at all!
+
+  The realization process, in this case, is called interpretation.
+  The interpretation process focus on how we can use them to compute.
+ *)
+
+Definition pred (n : nat) : nat :=
+  match n with
+  | O => O
+  | S n' => n'
+  end.
+
+End NatPlayground.
+
+Check (S (S (S (S O)))).
+
+(**
+  Build in magic of Rocq, ordinary decimal numerals can be used as an alternative to the "unary" notation.
+ *)
+
+Definition minustwo (n : nat) : nat :=
+  match n with
+  | O => O
+  | S O => O
+  | S (S n') => n'
+  end.
+
+Compute (minustwo (S (S 4))).
+
+Check S.
+Check minustwo.
+Check pred.
+
+(**
+
+   We don't give computation rules for "S".
+   "S" is just a function to help us write things down.
+
+   Pattern matching is not enough for us to check properties on natural numbers.
+ *)
+
+Fixpoint even (n : nat) : bool :=
+  match n with
+  | O => true
+  | S O => false
+  | S (S n') => even n'
+  end.
+
+Definition odd (n : nat) : bool :=
+  negb (even n).
+
+Example test_odd1 : odd 1 = true.
+Proof. simpl. reflexivity. Qed.
+
+(**
+
+   "simpl" has no effect on the goal.
+
+ *)
+
+Module NatPlayground2.
+
+Fixpoint plus (n : nat) (m : nat) : nat :=
+  match n with
+  | 0 => m
+  | S n' => S (plus n' m)
+  end.
+
+Compute (plus 3 2).
+
+(**
+If two or more arguments have the same type, they can be grouped together.
+ *)
+
+Fixpoint mult (n m : nat) : nat :=
+  match n with
+  | 0 => 0
+  | S n' => plus (mult n' m) m
+  end.
+
+Compute (mult 2 3).
