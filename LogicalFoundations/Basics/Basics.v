@@ -348,4 +348,24 @@ Proof. simpl. reflexivity. Qed.
 
  *)
 
+Module NatPlayground2.
 
+Fixpoint plus (n : nat) (m : nat) : nat :=
+  match n with
+  | 0 => m
+  | S n' => S (plus n' m)
+  end.
+
+Compute (plus 3 2).
+
+(**
+If two or more arguments have the same type, they can be grouped together.
+ *)
+
+Fixpoint mult (n m : nat) : nat :=
+  match n with
+  | 0 => 0
+  | S n' => plus (mult n' m) m
+  end.
+
+Compute (mult 2 3).
