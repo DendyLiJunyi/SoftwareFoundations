@@ -369,3 +369,66 @@ Fixpoint mult (n m : nat) : nat :=
   end.
 
 Compute (mult 2 3).
+
+(**
+We can match two expressions at once by putting a comma between them:
+ *)
+
+Fixpoint minus (n m : nat) : nat :=
+  match n, m with
+  | 0 , _ => 0
+  | _ , 0 => n
+  | S n' , S m' => minus n' m'
+  end.
+
+Compute (minus 2 2).
+
+End NatPlayground2.
+
+Fixpoint exp (base power : nat) : nat :=
+  match power with
+  | 0 => S 0
+  | S power' => mult base (exp base power')
+  end.
+
+Compute (exp 2 3).
+
+(**
+We can make numerical expressions easier to read and write by introducing notations for addition, subtraction, and multiplication.
+ *)
+
+Notation "x + y" := (plus x y)
+                    (at level 50, left associativity)
+                    : nat_scope.
+
+Notation "x - y" := (minus x y)
+                    (at level 50, left associativity)
+                    : nat_scope.
+
+Notation "x * y" := (mult x y)
+                    (at level 40, left associativity)
+                    : nat_scope.
+
+Compute (1 + 1 * 2).
+
+(**
+
+   It seems like one can not change the level to whatever number.
+Check out the "More on Notation" section.
+
+   In Rocq, even testing equality is a user - defined operation!
+
+*)
+
+Fixpoint eqb (n m : nat) : bool :=
+  match n with
+  | 0 => match m with
+         | 0 => true
+         | S m' => false
+         end
+  | S n' => match m with
+            | 0 => false
+            | S m' => eqb n' m'
+            end
+  end.
+
