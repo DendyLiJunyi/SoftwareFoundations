@@ -432,3 +432,77 @@ Fixpoint eqb (n m : nat) : bool :=
             end
   end.
 
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | 0 => true
+  | S n' => match m with
+            | 0 => false
+            | S m' => leb n' m'
+            end
+  end.
+
+Compute (leb 1 2).
+
+(**
+   I guess eqb here means equal & bool
+ *)
+
+Notation "x =? y" := (eqb x y) (at level 70) : nat_scope.
+Notation "x <=? y" := (leb x y) (at level 70) : nat_scope.
+
+Example test_leb : (3 <=? 4) = true.
+Proof. reflexivity. Qed.
+
+(**
+   x = y is a claim -- "a proposition"
+   x =? y is a boolean expression whose value we can compute
+ *)
+
+(* * Proof by Simplification * *)
+
+(**
+   Proof by simplification can also be used to establish more interesting properties.
+ *)
+
+Theorem plus_0_n : forall n : nat, 0 + n = n.
+Proof.
+  intros n. simpl. reflexivity. Qed.
+
+(**
+   reflexivity is very powerful, it also does more simplification than simpl does.
+   We can sometimes throw simpl alway.
+
+   If we don't want to leave the goal in a messy state - simpl.
+
+   intros moves n from the quantifier in the goal to a context of current assumptions.
+
+   We can use any identifier in the intros clause, but this might be confusing.
+
+   A tactic is a command that is used between Proof and Qed to guide the process of checking some claim we are making.
+  *)
+
+Theorem plus_1_l : forall n : nat, 1 + n = S n.
+Proof.
+  intro n. simpl. reflexivity. Qed.
+
+Theorem mult_0_l : forall n : nat, 0 * n = 0.
+Proof.
+  intro n. simpl. reflexivity. Qed.
+
+(* * Proof by Rewriting * *)
+
+Theorem plus_id_example : forall n m : nat,
+  n = m ->
+  n + n = m + m.
+Proof.
+  intros n m.
+  intros H.
+  (* rewrite the goal using hypothesis on the left side by using -> *)
+  rewrite -> H.
+  reflexivity. Qed.
+
+
+
+
+
+

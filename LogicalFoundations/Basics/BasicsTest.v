@@ -59,3 +59,43 @@ Proof. simpl. reflexivity. Qed.
 Example test_factorial2 : (factorial 5) = (mult 10 12).
 Proof. reflexivity. Qed.
 
+(* * Exercise : ltb * *)
+
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | 0 => true
+  | S n' => match m with
+            | 0 => false
+            | S m' => leb n' m'
+            end
+  end.
+
+Definition ltb (n m : nat) : bool :=
+  match m with
+  | 0 => match n with
+         | 0 => false
+         | S n' => leb n' 0
+         end
+  | S m' => leb n m'
+  end.
+
+Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
+
+Compute (ltb 2 2).
+Compute (ltb 0 2).
+Compute (ltb 4 6).
+
+(* * Exercise : plus_id_exercise * *)
+
+Theorem plus_id_exercise : forall n m o : nat,
+  n = m -> m = o -> n + m = m + o.
+Proof.
+  intro n.
+  intro m.
+  intro o.
+  intro H1.
+  intro H2.
+  rewrite -> H1.
+  (* -> in rewrite means using left side of the equality to replace left side of the goal *)
+  rewrite <- H2.
+  reflexivity. Qed.
