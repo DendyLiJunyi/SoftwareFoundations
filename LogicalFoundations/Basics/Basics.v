@@ -499,8 +499,25 @@ Proof.
   intros H.
   (* rewrite the goal using hypothesis on the left side by using -> *)
   rewrite -> H.
-  reflexivity. Qed.
+  reflexivity. 
+Qed.
 
+(**
+   Check can also be used to examine the statements of previously declared lemmas and theorems.
+ *)
+
+Check mult_n_O.
+Check mult_n_Sm.
+
+Theorem mult_n_0_m_0 : forall p q : nat, (p * 0) + (q * 0) = 0.
+Proof.
+  (* Use intros to intro multiple arguments at the same time *)
+  intros p q.
+  rewrite <- mult_n_O.
+  rewrite <- mult_n_O.
+  simpl.
+  reflexivity.
+Qed.
 
 
 
