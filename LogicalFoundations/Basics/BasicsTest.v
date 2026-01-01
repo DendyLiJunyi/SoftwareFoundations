@@ -98,4 +98,16 @@ Proof.
   rewrite -> H1.
   (* -> in rewrite means using left side of the equality to replace left side of the goal *)
   rewrite <- H2.
-  reflexivity. Qed.
+  reflexivity. 
+Qed.
+
+Theorem mult_n_1 : forall p : nat, p * 1 = p.
+Proof.
+  intro p.
+  rewrite <- mult_n_Sm.
+  (* rewrite <- is use right side of the equation to rewrite left side of the equation in the goal*)
+  rewrite <- mult_n_O.
+  simpl.
+  reflexivity.
+Qed.
+
