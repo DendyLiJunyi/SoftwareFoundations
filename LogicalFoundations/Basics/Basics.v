@@ -519,7 +519,26 @@ Proof.
   reflexivity.
 Qed.
 
+(* * Course Late Policies, Formalized * *)
 
+Module LateDays.
 
+Inductive letter : Type :=
+  | A | B | C | D | F.
 
+(* a Natural A is just a "plain" grade of A *)
+Inductive modifier : Type :=
+  | Plus | Natural | Minus.
+
+(* a full grade is just a letter and a modifier *)
+Inductive grade : Type :=
+  Grade (l : letter) (m : modifier).
+
+(* "A-" be encoded into "Grade A Minus" *)
+
+(* Grade can be compare *)
+Inductive comparison : Type :=
+  | Eq
+  | Lt
+  | Gt.
 
