@@ -608,3 +608,77 @@ Proof. simpl. reflexivity. Qed.
 
 Example test_grade_comparison4 : (grade_comparison (Grade B Minus) (Grade C Plus)) = Gt.
 Proof. simpl. reflexivity. Qed.
+
+(**
+   Define how to lower the letter component of a grade.
+ *)
+
+Definition lower_letter (l : letter) : letter :=
+  match l with
+  | A => B
+  | B => C
+  | C => D
+  | D => F
+  | F => F
+  end.
+
+Theorem lower_letter_lowers : forall (l : letter), letter_comparison (lower_letter l) l = Lt.
+Proof.
+  intro l.
+  destruct l as [] eqn:El.
+  - simpl. reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+    (* Couldn't prove the problem cause the edge case produces a counter example *)
+Abort.
+
+(* * Exercise : lower_letter_lowers * *)
+Theorem lower_letter_lowers :
+  forall (l : letter), 
+  letter_comparison F l = Lt ->
+  letter_comparison (lower_letter l) l = Lt.
+Proof.
+  intros l H.
+  destruct l as [] eqn:Hl.
+  - simpl. reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - rewrite <- H.
+    simpl.
+    reflexivity.
+Qed.
+
+(* * Exercise : lower_grade * *)
+
+Definition lower_grade (g : grade) : grade :=
+  match g with
+  | Grade l Plus => Grade l Natural
+  | Grade l Natural => Grade l Minus
+  | Grade l Minus =>
+      match l with
+      | F => Grade F Minus
+      | _ => Grade (lower_letter l) Plus
+      end
+  end.
+
+Example lower_grade_A_Minus :
+  lower_grade (Grade A Minus) = (Grade B Plus).
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+Example lower_grade_F_Natural :
+  lower_grade (Grade F Natural) = (Grade F Minus).
+Proof.
+  reflexivity.
+Qed.
+
+Example lower_grade_twice :
+  lower_grade (lower_grade (Grade B Minus)) = (Grade C Natural).
+Proof.
+  reflexivity.
+Qed.
+
