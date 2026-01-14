@@ -519,7 +519,166 @@ Proof.
   reflexivity.
 Qed.
 
+(* * Course Late Policies, Formalized * *)
+
+Module LateDays.
+
+Inductive letter : Type :=
+  | A | B | C | D | F.
+
+(* a Natural A is just a "plain" grade of A *)
+Inductive modifier : Type :=
+  | Plus | Natural | Minus.
+
+(* a full grade is just a letter and a modifier *)
+Inductive grade : Type :=
+  Grade (l : letter) (m : modifier).
+
+(* "A-" be encoded into "Grade A Minus" *)
+
+(* Grade can be compare *)
+Inductive comparison : Type :=
+  | Eq
+  | Lt
+  | Gt.
+
+Definition letter_comparison (l1 l2 : letter) : comparison :=
+  match l1, l2 with
+  | A, A => Eq
+  | A, _ => Gt
+  | B, A => Lt
+  | B, B => Eq
+  | B, _ => Gt
+  | C, (A | B) => Lt
+  | C, C => Eq
+  | C, _ => Gt
+  | D, (A | B | C) => Lt
+  | D, D => Eq
+  | D, _ => Gt
+  | F, (A | B | C | D) => Lt
+  | F, F => Eq
+  end.
 
 
+Compute letter_comparison A B.
+Compute letter_comparison A A.
 
+(** Exercise : letter_comparison **)
+
+Theorem letter_comparision_Eq :
+  forall l, letter_comparison l l = Eq.
+Proof.
+  intros l. destruct l eqn:El.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Definition modifier_comparison (m1 m2 : modifier) : comparison :=
+  match m1, m2 with
+  | Plus, Plus => Eq
+  | Plus, _ => Gt
+  | Natural, Plus => Lt
+  | Natural, Natural => Eq
+  | Natural, _ => Gt
+  | Minus, (Plus | Natural) => Lt
+  | Minus, Minus => Eq
+  end.
+
+(** Exercise : grade_comparison**)
+Definition grade_comparison (g1 g2 : grade) : comparison :=
+  match g1, g2 with
+  | Grade l1 m1, Grade l2 m2 =>
+      match letter_comparison l1 l2 with
+      | Eq => modifier_comparison m1 m2
+      | _ => letter_comparison l1 l2
+      end
+  end.
+
+Example test_grade_comparison1 : (grade_comparison (Grade A Minus) (Grade B Plus)) = Gt.
+Proof. simpl. reflexivity. Qed.
+
+Example test_grade_comparison2 : (grade_comparison (Grade A Minus) (Grade A Plus)) = Lt.
+Proof. simpl. reflexivity. Qed.
+
+Example test_grade_comparison3 : (grade_comparison (Grade F Plus) (Grade F Plus)) = Eq.
+Proof. simpl. reflexivity. Qed.
+
+Example test_grade_comparison4 : (grade_comparison (Grade B Minus) (Grade C Plus)) = Gt.
+Proof. simpl. reflexivity. Qed.
+
+(**
+   Define how to lower the letter component of a grade.
+ *)
+
+Definition lower_letter (l : letter) : letter :=
+  match l with
+  | A => B
+  | B => C
+  | C => D
+  | D => F
+  | F => F
+  end.
+
+Theorem lower_letter_lowers : forall (l : letter), letter_comparison (lower_letter l) l = Lt.
+Proof.
+  intro l.
+  destruct l as [] eqn:El.
+  - simpl. reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+    (* Couldn't prove the problem cause the edge case produces a counter example *)
+Abort.
+
+(* * Exercise : lower_letter_lowers * *)
+Theorem lower_letter_lowers :
+  forall (l : letter), 
+  letter_comparison F l = Lt ->
+  letter_comparison (lower_letter l) l = Lt.
+Proof.
+  intros l H.
+  destruct l as [] eqn:Hl.
+  - simpl. reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - rewrite <- H.
+    simpl.
+    reflexivity.
+Qed.
+
+(* * Exercise : lower_grade * *)
+
+Definition lower_grade (g : grade) : grade :=
+  match g with
+  | Grade l Plus => Grade l Natural
+  | Grade l Natural => Grade l Minus
+  | Grade l Minus =>
+      match l with
+      | F => Grade F Minus
+      | _ => Grade (lower_letter l) Plus
+      end
+  end.
+
+Example lower_grade_A_Minus :
+  lower_grade (Grade A Minus) = (Grade B Plus).
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+Example lower_grade_F_Natural :
+  lower_grade (Grade F Natural) = (Grade F Minus).
+Proof.
+  reflexivity.
+Qed.
+
+Example lower_grade_twice :
+  lower_grade (lower_grade (Grade B Minus)) = (Grade C Natural).
+Proof.
+  reflexivity.
+Qed.
 
