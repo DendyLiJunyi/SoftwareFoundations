@@ -682,3 +682,65 @@ Proof.
   reflexivity.
 Qed.
 
+(* * Exercise : lower_grade_lowers * *)
+Theorem lower_grade_lowers :
+  forall (g : grade),
+  grade_comparison (Grade F Minus) g = Lt ->
+  grade_comparison (lower_grade g) g = Lt.
+Proof.
+  intros g H.
+  destruct g as [] eqn:Hg.
+  destruct l as [] eqn:Hl.
+  - destruct m as [] eqn:Hm.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+  - destruct m as [] eqn:Hm.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+  - destruct m as [] eqn:Hm.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+  - destruct m as [] eqn:Hm.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+  - destruct m as [] eqn:Hm.
+    reflexivity.
+    reflexivity.
+    rewrite <- H.
+    simpl.
+    reflexivity.
+Qed.
+
+Fixpoint ltb' (n m : nat) : bool :=
+  match n with
+  | 0 => match m with
+         | 0 => false
+         | _ => true
+         end
+  | S n' => match m with
+            | 0 => false
+            | S m' => ltb' n' m'
+            end
+  end.
+
+Definition ltb (n m : nat) : bool :=
+  match eqb n m with
+  | true => false
+  | false => leb n m
+  end.
+
+Compute (ltb 9 9).
+
+Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
+
+Definition apply_late_policy (late_days : nat) (g : grade) : grade :=
+  if late_days <? 9 then g
+  else if late_days <? 17 then lower_grade g
+  else if late_days <? 21 then lower_grade (lower_grade g)
+  else lower_grade (lower_grade (lower_grade g)).
+
+
