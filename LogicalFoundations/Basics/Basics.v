@@ -743,4 +743,107 @@ Definition apply_late_policy (late_days : nat) (g : grade) : grade :=
   else if late_days <? 21 then lower_grade (lower_grade g)
   else lower_grade (lower_grade (lower_grade g)).
 
+(** External and internal are the same *)
 
+Theorem apply_late_policy_unfold :
+  forall (late_days : nat) (g : grade),
+  (apply_late_policy late_days g) = 
+  (if late_days <? 9 then g
+  else if late_days <? 17 then lower_grade g
+  else if late_days <? 21 then lower_grade (lower_grade g)
+  else lower_grade (lower_grade (lower_grade g))).
+
+Proof.
+  intros.
+  reflexivity.
+Qed.
+
+(* * Exercise : no_penalty_for_mostly_on_time * *)
+
+Theorem no_penalty_for_mostly_on_time :
+  forall (late_days : nat) (g : grade),
+  (late_days <? 9 = true) ->
+  apply_late_policy late_days g = g.
+Proof.
+  intros late_days g H.
+  destruct late_days as [] eqn:E.
+  - reflexivity.
+  - rewrite -> (apply_late_policy_unfold (S n) g).
+    rewrite -> H.
+    reflexivity.
+Qed.
+
+(* * Exercise : graded_lowered_once * *)
+
+Theorem grade_lowered_once :
+  forall (late_days : nat) (g : grade),
+  (late_days <? 9 = false) ->
+  (late_days <? 17 = true) ->
+  (apply_late_policy late_days g) = (lower_grade g).
+Proof.
+  intros late_days g H1 H2.
+  destruct late_days as [] eqn:E.
+  - rewrite -> (apply_late_policy_unfold 0 g).
+    rewrite -> H1.
+    rewrite -> H2.
+    reflexivity.
+  - rewrite -> (apply_late_policy_unfold (S n) g).
+    rewrite -> H1.
+    rewrite -> H2.
+    reflexivity.
+Qed.
+
+End LateDays.
+
+(* * Binary Numerals * *)
+
+(** Unary representation can be replace by binary representation. *)
+
+  Inductive bin : Type :=
+  | Z
+  | B0 (n : bin)
+  | B1 (n : bin).
+
+Fixpoint incr (m : bin) : bin :=
+  match m with
+  | Z => B1 Z
+  | B0 n => B1 n
+  | B1 n => B0 (incr n)
+  end.
+
+Check (B0 Z).
+
+Fixpoint bin_to_nat (m : bin) : nat :=
+  match m with
+  | Z => 0
+  | B0 n => 2 * (bin_to_nat n) 
+  (* Need strict smaller argument *)
+  | B1 n => S (2 * (bin_to_nat n))
+  end.
+
+Example test_bin_incr1 : (incr (B1 Z)) = B0 (B1 Z).
+Proof.
+  reflexivity.
+Qed.
+
+Example test_bin_comprehensive : bin_to_nat (B0 Z) = 0.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+Example test_bin_incr3 : (incr (B1 (B1 Z))) = B0 (B0 (B1 Z)).
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+Example test_bin_incr5 :
+        bin_to_nat (incr (B1 Z)) = 1 + bin_to_nat (B1 Z).
+Proof. reflexivity. Qed.
+
+Example test_bin_incr7 : bin_to_nat (B0 (B0 (B0 (B1 Z)))) = 8.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
