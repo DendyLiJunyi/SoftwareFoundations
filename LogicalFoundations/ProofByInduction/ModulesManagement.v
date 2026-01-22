@@ -351,4 +351,5 @@ Check UnaryPos_rec.
    - #[global] - available outside of the module.
  *)
 
-
+(** When we present nested module, its convenient to use export command. *)
+(** What export do is just mark the module and import it when we import it. *)
