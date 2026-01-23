@@ -254,6 +254,7 @@ Module Bar.
   Proof. find_secret. reflexivity. Qed.
   Lemma baz : 21 +p 21 = secret.
   Proof. fs. reflexivity. Qed.
+
 End Bar.
 
 (* * Guidelines about the order of Require and Import commands * *)
@@ -261,5 +262,24 @@ End Bar.
 (**
    - All Require commands should be at the beginning of a file, it makes it easier to know on which theories the file is built. 
   *)
+
+About Bar.secret.
+About Bar.secret_is_42.
+Print Assumptions Bar.secret_is_42.
+
+Print Bar.add_42.
+
+(** 
+  - tactic notation is not available
+  - tactic is available
+ *)
+
+Import Bar.
+Check (21 +p 21).
+Lemma forty_two' : secret = 42.
+Proof.
+  fs.
+  reflexivity.
+Qed.
 
 
