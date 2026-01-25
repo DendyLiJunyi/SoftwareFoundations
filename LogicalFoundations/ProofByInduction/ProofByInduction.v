@@ -1,4 +1,4 @@
-From Stdlib Require Export Bool.Bool.
+From Stdlib Require Export Arith.
 From LogicalFoundations Require Export Basics.
 
 Theorem add_0_r_firsttry : forall n : nat, n + 0 = n.
@@ -51,6 +51,17 @@ Proof.
   - induction m as [| m' IHm'].
     -- simpl. rewrite -> IHn'. reflexivity.
     -- simpl. rewrite -> IHn'. reflexivity.
+Qed.
+
+Theorem add_comm : forall n m : nat, n + m = m + n.
+Proof.
+  induction n as [| n' IHn'].
+  - induction m as [| m' IHm'].
+    -- reflexivity.
+    -- simpl. rewrite <- IHm'. reflexivity.
+  - induction m as [| m' IHm'].
+    -- simpl. rewrite -> IHn'. reflexivity.
+    -- simpl. rewrite -> IHn'. rewrite <- IHm'. simpl. rewrite <- IHn'. reflexivity.
 Qed.
 
 Theorem add_assoc : forall n m p : nat,
@@ -119,4 +130,29 @@ Proof.
   - reflexivity.
   - rewrite add_comm. simpl. rewrite add_comm. reflexivity.
 Qed.
+
+(** tactic replace e1 with e2 introduce two subgoals:
+    - e1 is replaced by e2
+    - e1 = e2*)
+
+(** rewrite is not smart at all.*)
+
+Theorem plus_rearrange_firsttry : forall n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).
+Proof.
+  intros n m p q.
+  rewrite add_comm.
+  (* Doesn't work... Rocq rewrites the biggest expression. *)
+Abort.
+
+Theorem plus_rearrange : forall n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).
+Proof.
+  intros n m p q.
+  replace (n + m) with (m + n).
+  - reflexivity.
+  - rewrite add_comm. reflexivity.
+Qed.
+
+(** * Foraml vs. Informal Proof * **)
+(** Informal proofs are algorithms; formal proofs are code.*)
+
 

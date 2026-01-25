@@ -6,7 +6,7 @@ Check or_comm.
 
 (** Coq contains files Notations.vo Ltac.vo *)
 
-From Coq Require Bool.Bool.
+From Stdlib Require Bool.Bool.
 
 (** Load all logical and computational content in the file Bool.vo *)
 
@@ -165,7 +165,7 @@ About foo.
 Locate foo.
 (** foo function is being covered. *)
 
-From Coq Require Import Arith.PeanoNat ZArith.BinInt.
+From Stdlib Require Import Arith.PeanoNat ZArith.BinInt.
 
 Check Nat.add_0_r.
 Check Z.add_0_r.
