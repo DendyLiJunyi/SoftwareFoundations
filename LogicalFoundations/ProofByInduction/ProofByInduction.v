@@ -1,3 +1,4 @@
+From Stdlib Require Export Bool.Bool.
 From LogicalFoundations Require Export Basics.
 
 Theorem add_0_r_firsttry : forall n : nat, n + 0 = n.
@@ -107,7 +108,15 @@ Proof.
   - rewrite -> IHn'. simpl. rewrite -> negb_negb. reflexivity.
 Qed.
 
-(** Large proofs are often broken into a sequence of theorems, with later proofs referring to earier theorem.*)
+(** Large proofs are often broken into a sequence of theorems, with later proofs referring to earier theorem.
 
+    Use the require fact in place and then prove it as a separate step.*)
 
+Theorem mult_0_plus' : forall n m : nat, (n + 0 + 0) * m = n * m.
+Proof.
+  intros n m.
+  replace (n + 0 + 0) with n.
+  - reflexivity.
+  - rewrite add_comm. simpl. rewrite add_comm. reflexivity.
+Qed.
 
