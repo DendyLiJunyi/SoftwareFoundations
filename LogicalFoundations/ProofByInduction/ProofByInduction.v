@@ -277,3 +277,45 @@ Proof.
            ---- rewrite add_comm. reflexivity.
 Qed.
 
+(** * Nat to Bin and Back to Nat * **)
+Inductive bin : Type :=
+  | Z
+  | B0 (n : bin)
+  | B1 (n : bin).
+
+Fixpoint incr (m : bin) : bin :=
+  match m with
+  | Z => B1 Z
+  | B0 n => B1 n
+  | B1 n => B0 (incr n)
+  end.
+
+Fixpoint bin_to_nat (m : bin) : nat :=
+  match m with
+  | Z => 0
+  | B0 n => (bin_to_nat n) * 2
+  | B1 n => (bin_to_nat n) * 2 + 1
+  end.
+
+Theorem bin_to_nat_pres_incr : forall b : bin, bin_to_nat (incr b) = 1 + bin_to_nat b.
+Proof.
+  induction b as [| b0 IHb0| b1 IHb1].
+  - reflexivity.
+  - simpl. rewrite <- S_add_1_r. reflexivity.
+  - simpl. rewrite -> IHb1. simpl. rewrite <- S_add_1_r. reflexivity.
+Qed.
+
+Fixpoint nat_to_bin (n : nat) : bin :=
+  match n with
+  | 0 => Z
+  | S n' => incr (nat_to_bin n')
+  end.
+
+Theorem nat_bin_nat : forall n : nat,
+  bin_to_nat (nat_to_bin n) = n.
+Proof.
+  induction n as [| n' IHn'].
+  - reflexivity.
+  - simpl. rewrite bin_to_nat_pres_incr. rewrite -> IHn'. reflexivity.
+Qed.
+
