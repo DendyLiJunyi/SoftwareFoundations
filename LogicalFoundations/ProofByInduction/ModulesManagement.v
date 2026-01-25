@@ -6,7 +6,7 @@ Check or_comm.
 
 (** Coq contains files Notations.vo Ltac.vo *)
 
-From Coq Require Bool.Bool.
+From Stdlib Require Bool.Bool.
 
 (** Load all logical and computational content in the file Bool.vo *)
 
@@ -165,7 +165,7 @@ About foo.
 Locate foo.
 (** foo function is being covered. *)
 
-From Coq Require Import Arith.PeanoNat ZArith.BinInt.
+From Stdlib Require Import Arith.PeanoNat ZArith.BinInt.
 
 Check Nat.add_0_r.
 Check Z.add_0_r.
@@ -254,12 +254,125 @@ Module Bar.
   Proof. find_secret. reflexivity. Qed.
   Lemma baz : 21 +p 21 = secret.
   Proof. fs. reflexivity. Qed.
+
 End Bar.
+
+(** Sum up : 
+   - constants, tactis and abbreviations contained in a module are available even if we do not Import a module.
+   - notations, Ltac notations, Ltac2 notations need the module to be imported to be available.
+   - coercions, hints, type class instances and canonical structures.
+ *)
 
 (* * Guidelines about the order of Require and Import commands * *)
 
 (**
    - All Require commands should be at the beginning of a file, it makes it easier to know on which theories the file is built. 
+   - Only require import what is needed
+   - Require import external libraries first(w.r.t. the importance of the libraries.), then import internal libraries in the end. Cause we don't want the external project to break our file by shadowing internal constants we use in that file.
+   - Require import files in the same order everytime.
   *)
 
+<<<<<<< HEAD
+About Bar.secret.
+About Bar.secret_is_42.
+Print Assumptions Bar.secret_is_42.
 
+Print Bar.add_42.
+
+(** 
+  - tactic notation is not available
+  - tactic is available
+ *)
+
+Import Bar.
+Check (21 +p 21).
+Lemma forty_two' : secret = 42.
+Proof.
+  fs.
+  reflexivity.
+Qed.
+
+=======
+(* * Fine control over module features * *)
+(** * Selective import * **)
+(** Why do we need to import a module?
+   - make the short names of constants, abbreviations and tactics available.
+   - enable the other content: notations, tactic notations, hints, coercions and canonical.
+ *)
+>>>>>>> 09d8fd6c14e9966b942ea7da1ac48048c3cfa58a
+
+Create HintDb req_tut.
+
+Module Baz.
+  (* Constants: *)
+  Parameter b : nat.
+  Definition almost_b := 41.
+  Axiom b_rel : b = almost_b + 1.
+  (* An abbreviation: *)
+  Notation add_two := (fun x => x + 2).
+  (* A tactic: *)
+  Ltac rfl := reflexivity.
+  (* A notation: *)
+  Notation "x !!" := (x * 42) (at level 2) : nat_scope.
+  (* A coercion: *)
+  Coercion to_nat := fun (x : Z) => 42.
+  #[export] Hint Rewrite b_rel : req_tut.
+End Baz.
+
+Import (notations) Baz.
+Compute 10 !!.
+
+Fail Check b.
+Fail Check almost_b.
+Fail Check b_rel.
+Fail Compute (0%Z + 3).
+Print HintDb req_tut.
+
+Import (coercions, hints) Baz.
+Compute (0%Z + 3).
+Print HintDb req_tut.
+Lemma b_42 : Baz.b = 42.
+Proof. autorewrite with req_tut. unfold Baz.almost_b. Baz.rfl. Qed.
+
+(** There is no way to "un-import" anything in the same module or section. *)
+
+Module OtherBaz.
+  Definition other_b := 42.
+  Definition almost_other_b := 41.
+  Definition almost_almost_other_b := 40.
+  Notation "x ??" := (x * 42) (at level 2) : nat_scope.
+  Coercion to_nat := fun (x : bool) => 42.
+End OtherBaz.
+
+
+Import -(coercions) OtherBaz.
+(* Import everything except coercions. *)
+
+Check almost_other_b.
+Compute 10 ??.
+Fail Check (true + 3).
+
+Module Unary.
+  Inductive UnaryPos := one | successor (n : UnaryPos).
+  Inductive UnaryZ := zero | plus (n : UnaryPos) | minus (n : UnaryPos).
+End Unary.
+
+Check Unary.UnaryPos.
+
+(** automated generated induction principles are also being geenrated. **)
+Import Unary(UnaryPos).
+Print UnaryPos.
+
+Import Unary(one, UnaryPos_rec).
+Check one.
+Check UnaryPos_rec.
+
+(** * Locality attributes in modules * **)
+(** 3 locality attributes:
+   - #[local] - unavailable for import.
+   - #[export] - only available when Imported.
+   - #[global] - available outside of the module.
+ *)
+
+(** When we present nested module, its convenient to use export command. *)
+(** What export do is just mark the module and import it when we import it. *)
