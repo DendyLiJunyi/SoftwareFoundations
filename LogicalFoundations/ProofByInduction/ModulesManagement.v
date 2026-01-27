@@ -272,7 +272,6 @@ End Bar.
    - Require import files in the same order everytime.
   *)
 
-<<<<<<< HEAD
 About Bar.secret.
 About Bar.secret_is_42.
 Print Assumptions Bar.secret_is_42.
@@ -292,14 +291,12 @@ Proof.
   reflexivity.
 Qed.
 
-=======
 (* * Fine control over module features * *)
 (** * Selective import * **)
 (** Why do we need to import a module?
    - make the short names of constants, abbreviations and tactics available.
    - enable the other content: notations, tactic notations, hints, coercions and canonical.
  *)
->>>>>>> 09d8fd6c14e9966b942ea7da1ac48048c3cfa58a
 
 Create HintDb req_tut.
 
@@ -332,8 +329,7 @@ Import (coercions, hints) Baz.
 Compute (0%Z + 3).
 Print HintDb req_tut.
 Lemma b_42 : Baz.b = 42.
-Proof. autorewrite with req_tut. unfold Baz.almost_b. Baz.rfl. Qed.
-
+Admitted.
 (** There is no way to "un-import" anything in the same module or section. *)
 
 Module OtherBaz.
