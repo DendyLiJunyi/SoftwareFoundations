@@ -1,4 +1,5 @@
 From LogicalFoundations Require Export ProofByInduction.
+
 Module NatList.
 
   (* ** Pairs of Numbers ** *)
@@ -325,6 +326,58 @@ Module NatList.
   Qed.
 
   Fixpoint remove_one (v : nat) (s : bag) : bag :=
+    match s with 
+    | nil => nil
+    | h :: t => if h =? v then t else h :: (remove_one v t)
+    end.
 
+  Example test_remove_one1:
+      count 5 (remove_one 5 [2;1;5;4;1]) = 0.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
 
+  Example test_remove_one2:
+    count 5 (remove_one 5 [2;1;4;1]) = 0.
+  Proof. reflexivity. Qed. 
+ 
+  Example test_remove_one3:
+    count 4 (remove_one 5 [2;1;4;5;1;4]) = 2.
+  Proof. reflexivity. Qed. 
+  
+  Example test_remove_one4:
+    count 5 (remove_one 5 [2;1;5;4;5;1;4]) = 1.
+  Proof. reflexivity. Qed. 
+
+  Theorem add_inc_count : forall n : nat, forall b : bag, length (add n b) = length b + 1.
+  Proof.
+    intros n b.
+    simpl.
+    rewrite -> S_add_1_r.     
+    reflexivity.
+  Qed.
+
+  (* ** Reasoning about Lists ** *)
+  Theorem nil_app : forall l : natlist,
+    [] ++ l = l.
+  Proof. reflexivity. Qed.
+
+  Theorem tl_length_pred : forall l : natlist,
+    pred (length l) = length (tl l).
+  Proof.
+    intros l. destruct l as [| n l'].
+    - (* l = nil *)
+      reflexivity.
+    - (* l = h :: t *)
+      reflexivity.
+  Qed.
+  
+  (** Reading proof scripts will not help you very much.
+      Rather, it is important to step through the details of each one using Rocq and think about what each step achieves.
+      Otherwise it is more or less guaranteed that the exercises will make no sense when you get to them. 'Nuff said.*)
+
+  (* ** Induction on Lists ** *)
+  (** Induction is the most common technique to prove things about lists.
+      Each inductive declaration defines a set of data values that can and only can be built up using the declared constructors.*)
 
