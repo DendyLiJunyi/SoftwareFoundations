@@ -1,4 +1,5 @@
 From LogicalFoundations Require Export ProofByInduction.
+
 Module NatList.
 
   (* ** Pairs of Numbers ** *)
@@ -325,6 +326,294 @@ Module NatList.
   Qed.
 
   Fixpoint remove_one (v : nat) (s : bag) : bag :=
+    match s with 
+    | nil => nil
+    | h :: t => if h =? v then t else h :: (remove_one v t)
+    end.
 
+  Example test_remove_one1:
+      count 5 (remove_one 5 [2;1;5;4;1]) = 0.
+  Proof.
+    simpl.
+    reflexivity.
+  Qed.
 
+  Example test_remove_one2:
+    count 5 (remove_one 5 [2;1;4;1]) = 0.
+  Proof. reflexivity. Qed. 
+ 
+  Example test_remove_one3:
+    count 4 (remove_one 5 [2;1;4;5;1;4]) = 2.
+  Proof. reflexivity. Qed. 
+  
+  Example test_remove_one4:
+    count 5 (remove_one 5 [2;1;5;4;5;1;4]) = 1.
+  Proof. reflexivity. Qed. 
 
+  Theorem add_inc_count : forall n : nat, forall b : bag, length (add n b) = length b + 1.
+  Proof.
+    intros n b.
+    simpl.
+    rewrite -> S_add_1_r.     
+    reflexivity.
+  Qed.
+
+  (* ** Reasoning about Lists ** *)
+  Theorem nil_app : forall l : natlist,
+    [] ++ l = l.
+  Proof. reflexivity. Qed.
+
+  Theorem tl_length_pred : forall l : natlist,
+    pred (length l) = length (tl l).
+  Proof.
+    intros l. destruct l as [| n l'].
+    - (* l = nil *)
+      reflexivity.
+    - (* l = h :: t *)
+      reflexivity.
+  Qed.
+  
+  (** Reading proof scripts will not help you very much.
+      Rather, it is important to step through the details of each one using Rocq and think about what each step achieves.
+      Otherwise it is more or less guaranteed that the exercises will make no sense when you get to them. 'Nuff said.*)
+
+  (* ** Induction on Lists ** *)
+  (** Induction is the most common technique to prove things about lists.
+      Each inductive declaration defines a set of data values that can and only can be built up using the declared constructors.
+
+      Induction on lists:
+     - Show that P is true of l when l is nil
+     - Then show that P is true of l when l is cons n l' for some number n and some smaller list l', assuming that P is true for l'.*)
+
+  Theorem app_assoc : forall l1 l2 l3 : natlist,
+    (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+  Proof.
+    intros l1 l2 l3. induction l1 as [| n l1' IHl1'].
+    - reflexivity.
+    - simpl. rewrite -> IHl1'. reflexivity.
+  Qed.
+
+  (** Proof in human way will include more explicit signposts.*)
+
+  (* ** Generalizing Statements ** *)
+  (** One can generalizing statements cause it is easier to prove by induction.*)
+  
+  Theorem repeat_double_firsttry : forall c n : nat,
+    repeat n c ++ repeat n c = repeat n (c + c).
+  Proof.
+    intros c n. induction n as [| n' IHn'].
+    - induction c as [| c' IHc'].
+      -- reflexivity.
+      -- simpl.
+  Abort.
+  (* Just couldn't prove it! *)
+
+  Theorem repeat_plus : forall c1 c2 n : nat,
+    repeat n c1 ++ repeat n c2 = repeat n (c1 + c2).
+  Proof.
+    intros c1 c2 n.
+    induction c1 as [| c1' IHc1'].
+    - simpl. reflexivity.
+    - simpl. rewrite <- IHc1'. reflexivity.
+  Qed.
+
+  (* ** Reversing a list ** *)
+  Fixpoint rev (l : natlist) : natlist :=
+    match l with
+    | nil => nil
+    | h :: t => rev t ++ [h]
+    end.
+
+  Example test_rev1 : rev [1;2;3] = [3;2;1].
+  Proof. reflexivity. Qed.
+
+  Example test_rev2 : rev nil = nil.
+  Proof. reflexivity. Qed.
+
+  Theorem rev_length_firsttry : forall l : natlist,
+    length (rev l) = length l.
+  Proof.
+    intros l. induction l as [| n l' IHl'].
+    - (* l = nil *)
+      reflexivity.
+    - simpl.
+      (* We don't have useful equation to simplify ++. *)
+      rewrite <- IHl'.
+  Abort.
+  
+  (** One should notice that the reverse list is just a list, so if we can generalize this lemma to all the natlist then it will work for reverse list.*)
+
+  Theorem app_length_S : forall l n,
+    length (l ++ [n]) = S (length l).
+  Proof.
+    intros l n. induction l as [| h l' IHl'].
+    - simpl. reflexivity.
+    - simpl. rewrite -> IHl'. reflexivity.
+  Qed.
+
+  Theorem rev_length_firsttry : forall l : natlist,
+    length (rev l) = length l.
+  Proof.
+    intros l. induction l as [| n l' IHl'].
+    - (* l = nil *)
+      reflexivity.
+    - simpl. rewrite -> app_length_S. rewrite -> IHl'. reflexivity.
+  Qed.
+  
+  (** Of course we can do a more general version.*)
+  
+  Theorem app_length_inductionl1try : forall l1 l2 : natlist,
+    length (l1 ++ l2) = length l1 + length l2.
+  Proof.
+    intros l1 l2. induction l2 as [| n l2' IHl2'].
+    - induction l1 as [| m l1' IHl1'].
+      (* Need induction here cause ++ is defined to add elements in l1 before elements in l2. Thus induction on l2 make no usage. *)
+      -- reflexivity.
+      -- simpl. rewrite -> IHl1'. reflexivity.
+    - induction l1 as [| m l1' IHl1'].
+      -- reflexivity.
+      -- simpl. rewrite -> IHl1'.
+         --- reflexivity.
+  Abort. 
+
+  Theorem app_length : forall l1 l2 : natlist,
+    length (l1 ++ l2) = length l1 + length l2.
+  Proof.
+    intros l1 l2. induction l1 as [| n l1 IHl1'].
+    - reflexivity.
+    - simpl. rewrite -> IHl1'. reflexivity.
+  Qed.
+  
+  (* ** Search ** *)
+  (** It's hard to remember the name of a theorem.*)
+  Search rev.
+  (* Rocq will display all the name contaions rev. *)
+  Search (_ + _ = _ + _). 
+  (* One can also use pattern to search. *)
+  Search (_ + _ = _ + _) inside ProofByInduction.
+  (* One can also restrict the module of the search result. *)
+  Search (?x + ?y = ?y + ?x).
+  (* The question mark is to indicate that it is a variable in the search pattern. *)
+
+  Theorem app_nil_r : forall l : natlist,
+    l ++ [] = l.
+  Proof.
+    intros l. induction l as [| n l' IHl'].
+    - reflexivity.
+    - simpl. rewrite -> IHl'. reflexivity.
+  Qed.
+
+  Theorem rev_app_distr : forall l1 l2 : natlist,
+    rev (l1 ++ l2) = rev l2 ++ rev l1.
+  Proof.
+    intros l1 l2. induction l1 as [| n l1' IHl1'].
+    - simpl. rewrite -> app_nil_r. reflexivity.
+    - simpl. rewrite -> IHl1'. rewrite -> app_assoc. reflexivity.
+  Qed.
+
+  Theorem rev_involutive : forall l : natlist,
+    rev (rev l) = l.
+  Proof.
+    induction l as [| n l1' IHl1'].
+    - reflexivity.
+    - simpl. rewrite -> rev_app_distr. rewrite -> IHl1'. reflexivity.
+  Qed.
+
+  Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
+    l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
+  Proof.
+    intros l1 l2 l3 l4.
+    rewrite app_assoc. rewrite app_assoc. reflexivity.
+  Qed.
+
+  Lemma nonzeors_app : forall l1 l2 : natlist,
+    nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
+  Proof.
+    intros l1 l2. induction l1 as [| n l1' IHl1'].
+    - reflexivity.
+    - simpl. induction n as [| n' IHn'].
+      -- rewrite IHl1'. reflexivity.
+      -- simpl.rewrite IHl1'. reflexivity.
+  Qed.
+
+  Fixpoint eqblist (l1 l2 : natlist) :=
+    match l1 with
+    | nil => match l2 with
+             | nil => true
+             | h :: t => false
+             end
+    | h :: t => match l2 with
+                | nil => false
+                | n :: m => if h =? n then eqblist t m else false
+                end
+    end.
+
+  Compute (eqblist [1;2;3] [1;2;3]).
+  Compute (eqblist [1;2;3] [1;2;4]).
+
+  Theorem eqblist_refl : forall l : natlist,
+    true = eqblist l l.
+  Proof. 
+    intros l. induction l as [| h l' IHl'].
+    - reflexivity.
+    - simpl. rewrite <- IHl'.
+      induction h as [| h' IHh'].
+      -- reflexivity.
+      -- simpl. rewrite <- IHh'. reflexivity.
+  Qed.
+  
+  Theorem count_member_nonzero : forall (s : bag),
+    1 <=? (count 1 (1 :: s)) = true.
+  Proof.
+    intros s. induction s as [| h s' IHs'].
+    - reflexivity.
+    - simpl. reflexivity.
+  Qed.
+
+  Theorem leb_n_Sn : forall n,
+    n <=? (S n) = true.
+  Proof.
+    induction n as [| n' IHn'].
+    - reflexivity.
+    - simpl. rewrite -> IHn'. reflexivity.
+  Qed.
+  
+  Theorem remove_does_not_increase_count : forall (s : bag),
+    (count 0 (remove_one 0 s)) <=? (count 0 s) = true.
+  Proof.
+    induction s as [| h s' IHs'].
+    - reflexivity.
+    - simpl. induction h as [| h' IHh'].
+      -- simpl. rewrite leb_n_Sn. reflexivity.
+      -- simpl. rewrite IHs'. reflexivity.
+  Qed.
+
+  Theorem bag_count_sum : forall (s1 s2 : bag), forall n : nat,
+    (count n s1) + (count n s2) = count n (sum s1 s2).
+  (* count n is s1 and s2 separately is the same as count in s1 + s2. *)
+  Proof.
+    intros s1 s2 n. induction s1 as [| h s1' IHs1'].
+    - reflexivity.
+    - simpl. destruct (h =? n).
+      -- simpl. rewrite -> IHs1'. reflexivity.
+      -- rewrite IHs1'. reflexivity.
+  Qed.
+
+  (* destruct can work on the expressions! *)
+  (* destruct is like case by case. *)
+
+  Theorem incolution_injective : forall (f : nat -> nat),
+    (forall n : nat, n = f (f n)) -> (forall n1 n2 : nat, f n1 = f n2 -> n1 = n2).
+  Proof.
+    intros f H1 n1 n2 E1.
+    rewrite -> H1. rewrite <- E1. rewrite <- H1. reflexivity.
+  Qed.
+
+  Theorem rev_injective : forall (l1 l2 : natlist),
+    rev l1 = rev l2 -> l1 = l2.
+  Proof.
+    intros l1 l2 E1.
+    rewrite <- rev_involutive. rewrite <- E1. rewrite -> rev_involutive. reflexivity.
+  Qed.
+
+  (** * Options *)
