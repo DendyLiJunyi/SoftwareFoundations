@@ -533,7 +533,7 @@ Module NatList.
     - reflexivity.
     - simpl. induction n as [| n' IHn'].
       -- rewrite IHl1'. reflexivity.
-      -- simpl.rewrite IHl1'. reflexivity.
+      -- simpl. rewrite IHl1'. reflexivity.
   Qed.
 
   Fixpoint eqblist (l1 l2 : natlist) :=
@@ -617,3 +617,132 @@ Module NatList.
   Qed.
 
   (** * Options *)
+
+  Fixpoint nth_bad (l : natlist) (n : nat) : nat :=
+    match l with
+    | nil => 42
+    | a :: l' => match n with
+                 | 0 => a
+                 | S n' => nth_bad l' n'
+                 end
+    end.
+  (** This function returns the nth element of a given list.
+    But it require the function to return some number - if the list is too short we can't have such an element! *)
+
+  Inductive natoption : Type :=
+    | Some (n : nat)
+    | None.
+  (** None and Some are defined in standard library. *)
+  
+  Fixpoint nth_error (l : natlist) (n : nat) : natoption :=
+    match l with
+    | nil => None
+    | a :: l' => match n with
+                 | 0 => Some a
+                 | S n' => nth_error l' n'
+                 end
+    end.
+  
+  Example test_nth_error1 : nth_error [4;5;6;7] 0 = Some 4.
+  Proof. reflexivity. Qed.
+
+  Example test_nth_error2 : nth_error [4;5;6;7] 8 = None.
+  Proof. reflexivity. Qed.
+
+  Definition option_elim (d : nat) (o : natoption) : nat :=
+    match o with
+    | Some n' => n'
+    | None => d
+    end.
+  (** option_elim pulls the nat out of a natoption. *)
+
+  Definition hd_error (l : natlist) : natoption :=
+    match l with
+    | nil => None
+    | h :: t => Some h
+    end.
+
+  Example test_hd_error1 : hd_error [] = None.
+  Proof. reflexivity. Qed.
+
+  Example test_hd_error2 : hd_error [1] = Some 1.
+  Proof. reflexivity. Qed.
+  
+  Example test_hd_error3 : hd_error [5;6;6] = Some 5.
+  Proof. reflexivity. Qed.
+
+  Theorem option_elim_hd : forall (l : natlist) (default : nat),
+    hd default l = option_elim default (hd_error l).
+  Proof.
+    intros l default. induction l as [| h l' IHl'].
+    - reflexivity.
+    - reflexivity.
+  Qed.
+End NatList.
+
+(** * Partial Maps *)
+
+Inductive id : Type :=
+  | Id (n : nat).
+
+(** id is just a number, intorducing a separate type by wrapping each nat with the tag Id. *)
+
+(**
+Fail to pattern matching :
+Definition eqb_id (n m : id) :=
+  match n, m with
+  | Id 0, Id 0 => true
+  | Id (S n'), Id (S m') => if n' =? m' then true else false
+  end.
+ *)
+
+Definition eqb_id (x1 x2 : id) :=
+  match x1, x2 with
+  | Id n1, Id n2 => n1 =? n2
+  end.
+
+Theorem eqb_id_refl : forall x, eqb_id x x = true.
+Proof. 
+  induction x as [x' IHx']. 
+  simpl.
+  induction x' as [| x'' IHx''].
+  - reflexivity.
+  - simpl. rewrite IHx''. reflexivity.
+Qed.
+
+Module PartialMap.
+Export NatList. (** Make definitions form NatList available here *)
+
+Inductive partial_map : Type :=
+  | empty
+  | record (i : id) (v : nat) (m : partial_map).
+(** There are two ways to construct a partial_map : either using the constructor empty to represent an empty partial map, or applyihng the constructor record to a key, a value, and an existing partial_map to construct a partial_map with an additional key-to-value mapping. *)
+
+(** Overrides the entry. *)
+Definition update (d : partial_map) (x : id) (value : nat) : partial_map :=
+  record x value d.
+(** It's just add a new id and a new value in the position of "head". *)
+
+Fixpoint find (x : id) (d : partial_map) : natoption :=
+  match d with
+  | empty => None
+  | record y v d' => if eqb_id x y then Some v else find x d'
+  end.
+
+Compute (find (Id 1) (record (Id 1) 999 empty)).
+
+Theorem update_eq : forall (d : partial_map) (x : id) (v : nat),
+  find x (update d x v) = Some v.
+Proof.
+  intros d x v.
+  simpl. rewrite -> eqb_id_refl. reflexivity. Qed.
+
+Theorem update_neq : forall (d : partial_map) (x y : id) (o : nat),
+  eqb_id x y = false -> find x (update d y o) = find x d.
+Proof.
+  intros d x y o H1.
+  simpl. rewrite -> H1. reflexivity.
+Qed.
+
+End PartialMap.
+
