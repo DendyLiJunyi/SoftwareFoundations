@@ -107,3 +107,58 @@ Qed.
 
 (** * The injection and discriminate Tactics * **)
 
+(**
+Inductive nat : Type :=
+   | o
+   | S (n : nat). *)
+
+(** Implicit facts :
+   constructor S is injective;
+   constructor o and S are disjoint. 
+
+   Forall the inductively defined type : all constructors are injective, and the values built from distinct constructors are never equal. *)
+
+Theorem S_injective : forall (n m : nat),
+  S n = S m ->
+  n = m.
+Proof.
+  intros n m H1.
+  assert (H2: n = pred (S n)). {reflexivity. }
+  rewrite H2. rewrite H1. simpl. reflexivity.
+Qed.
+
+(** assert tactic adds a given hypothesis.
+
+   injection tactic allows us to exploit the injectivity of any constructor. *)
+Theorem S_injective' : forall (n m : nat),
+  S n = S m ->
+  n = m.
+Proof.
+  intros n m H.
+  injection H as Hnm.
+  apply Hnm.
+Qed.
+
+Theorem injection_ex1 : forall (n m o : nat),
+  [n;m] = [o;o] ->
+  n = m.
+Proof.
+  intros n m o H.
+  injection H as H1 H2.
+  rewrite -> H1. symmetry. apply H2.
+Qed.
+
+Example injection_ex3 : forall (X : Type) (x y z : X) (l j : list X),
+  x :: y :: l = z :: j ->
+  j = z :: l ->
+  x = y.
+Proof.
+  intros X x y z l j H1 H2.
+  injection H1 as Hxy Hl.
+  assert (Hl2 : y :: l = z :: l). { rewrite <- H2. apply Hl. }
+  injection Hl2 as Hyz.
+  rewrite -> Hxy. symmetry. apply Hyz.
+Qed.
+
+(** rewrite -> is replace left by right. *)
+
