@@ -278,4 +278,100 @@ Qed.
 
 (** A -> B is replace A with B *)
 
+Lemma nth_error_always_none : forall (l : list nat),
+  (forall i, nth_error l i = None) ->
+  l = [].
+Proof.
+  intros l H.
+  specialize H with (i := 0).
+  destruct l as [| h t].
+  (* we must destruct l here, since we can't use induction, we'll use destruct. *)
+  + reflexivity.
+  + simpl in H. discriminate H.
+    (* different constructors can't be equal. *)
+Qed.
 
+Example trans_eq_example''' : forall (a b c d e f : nat),
+  [a;b] = [c;d] ->
+  [c;d] = [e;f] ->
+  [a;b] = [e;f].
+Proof.
+  intros a b c d e f eq1 eq2.
+  specialize trans_eq with (y := [c;d]) as H.
+  apply H.
+  apply eq1.
+  apply eq2.
+Qed.
+(** as... clause can name the new hypothesis. *)
+
+(** * Varying the Induction Hypothesis * **)
+Theorem double_injective : forall n m,
+  double n = double m ->
+  n = m.
+Proof.
+  intros n. induction n.
+  + intros m H. simpl in H. destruct m as [| m'].
+    - reflexivity.
+    - discriminate H.
+  + intros m H. destruct m as [| m'].
+    - specialize IHn with (m := 0). rewrite IHn in H. discriminate H. discriminate H.
+    - injection H. specialize IHn with (m := m'). intros eq1. apply IHn in eq1. rewrite <- eq1. reflexivity.
+Qed.
+
+(** Problems with intros n m. **)
+Theorem double_injective_FAILED : forall n m,
+  double n = double m ->
+  n = m.
+Proof.
+  intros n m. induction n as [| n' IHn'].
+  - (* n = O *) simpl. intros eq. destruct m as [| m'] eqn:E.
+    + (* m = O *) reflexivity.
+    + (* m = S m' *) discriminate eq.
+  - (* n = S n' *) intros eq. destruct m as [| m'] eqn:E.
+    + (* m = O *) discriminate eq.
+    + (* m = S m' *) f_equal.
+Abort.
+
+(** The problems happens because we fix m, and consider forall n.
+
+   Takeaway :
+   Use induction to prove things, one doesn't want things to be so specific. *)
+
+Theorem eqb_true : forall n m,
+  n =? m = true -> 
+  n = m.
+Proof.
+  induction n as [| n'].
+  + intros m eqm. destruct m as [| m'].
+    - reflexivity.
+    - simpl in eqm. discriminate eqm.
+  + intros m eqm. destruct m as [| m'].
+    - simpl in eqm. discriminate eqm.
+    - simpl in eqm. apply f_equal. specialize IHn' with (m := m'). apply IHn' in eqm.apply eqm.
+Qed.
+
+(** Informal Proof :
+   we do induction on n.
+   P(0) := " 0 =? m = true implies 0 = m".
+   + for m = 0, it's trivial;
+   + for m = S m', since two constructors can't be same, we reach a contradiction.
+
+   Suppose P(n) := "n =? m is true implies n = m". we want to show P(S n) := "S n =? m is true implies S n = m".
+
+   + for m = 0, since two constructors are different, we reach a contradiction.
+   + for m = S m', we have S n =? S m' which can be simplified to n =? m'. Since m is bounded by universal quantifier, thus we can set m to be m' inside P(n), thus we reach the result. *)
+
+Theorem plus_n_n_injective : forall n m,
+  n + n = m + m ->
+  n = m.
+Proof.
+  induction n as [| n'].
+  + intros m eq. destruct m as [| m'].
+    (* what's the difference between destruct and induction? *)
+    - reflexivity.
+    - simpl in eq. discriminate.
+  + intros m eq. destruct m as [| m'].
+    - simpl in eq. discriminate eq.
+    - specialize plus_n_Sm with (n := S m') as Hm. specialize Hm with (m := m'). rewrite <- Hm in eq.
+      specialize plus_n_Sm with (n := S n') as Hn. specialize Hn with (m := n'). rewrite <- Hn in eq. simpl in eq. injection eq. specialize IHn' with (m := m'). intros Hmn. apply IHn' in Hmn. apply f_equal. apply Hmn.
+Qed.
