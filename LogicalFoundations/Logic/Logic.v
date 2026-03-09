@@ -1,4 +1,5 @@
 From LogicalFoundations Require Export Poly.
+From LogicalFoundations Require Export ProofByInduction.
 
 (** The propositions and proofs we worked on so far depends on the equality propositions(e1 = e2). 
 
@@ -153,4 +154,172 @@ Qed.
 Check and.
 
 (** ** Disjunction ** **)
+Check or.
+
+Lemma factor_is_O :
+  forall n m : nat,
+  n = 0 \/ m = 0 -> n * m = 0.
+Proof.
+  (* case analysis pattern *)
+  intros n m [Hn | Hm].
+  - (* n = 0 *)
+    rewrite -> Hn.
+    reflexivity.
+  - (* m = 0 *)
+    rewrite -> Hm.
+    apply Nat.mul_0_r.
+Qed.
+
+(** Show disjunction holds, it suffices to show that one of its sides holds. *)
+
+Lemma or_intro_l : forall A B : Prop,
+  A -> A \/ B.
+Proof.
+  intros A B HA.
+  left.
+  apply HA.
+Qed.
+
+Lemma zeor_or_succ : 
+  forall n : nat,
+  n = 0 \/ n = S (pred n).
+Proof.
+  intros [| n'].
+  - (* n = 0 *) 
+    left. reflexivity.
+  - (* n = S n' *)
+    right. reflexivity.
+Qed.
+
+Lemma mult_is_0 :
+  forall n m,
+  n * m = 0 -> n = 0 \/ m = 0.
+Proof.
+  intros [| n'] [| m'] H.
+  - (* n = 0 & m = 0 *)
+    left. reflexivity.
+  - (* n = 0 & m = S m' *)
+    left. reflexivity.
+  - (* n = S n' & m = 0 *)
+    right. reflexivity.
+  - (* n = S n' & m = S m' *)
+    discriminate.
+Qed.
+
+Theorem or_commut : forall P Q : Prop,
+  P \/ Q -> Q \/ P.
+Proof.
+  intros P Q [HP | HQ].
+  - right. apply HP.
+  - left. apply HQ.
+Qed.
+
+(** ** Falsehood and Negation ** **)
+
+(** If P satisfies the principle of exploision, then forall Q, P -> Q *)
+
+(** False is un-provable. *)
+Definition not (P : Prop) := P -> False.
+
+Check False.
+
+Notation "~ x" := (not x) : type_scope.
+
+Theorem ex_falso_quodlibet :
+  forall (P : Prop),
+  False -> P.
+Proof.
+  intros P contra.
+  (* Why destruct contra can complete every goal? *)
+  destruct contra.
+Qed.
+
+Theorem not_implies_our_not : forall (P : Prop),
+  ~ P -> (forall (Q : Prop), P -> Q).
+Proof.
+  intros P HnotP Q HP.
+  unfold not in HnotP.
+  apply HnotP in HP.
+  destruct HP.
+Qed.
+
+(** Inforaml:
+   P is true
+   P -> False is true
+   So we have a contradiction. *)
+
+Notation "x <> y" := (~(x = y)) : type_scope.
+
+Theorem zero_not_one : 0 <> 1.
+Proof.
+  unfold not.
+  (* Assume oppsite is equal. *)
+  intros H.
+  discriminate H.
+Qed.
+
+Theorem not_False :
+  ~ False.
+Proof.
+  unfold not. intros H. destruct H. Qed.
+
+Theorem contradiction_implies_anything : forall P Q : Prop,
+  (P /\ ~P) -> Q.
+Proof.
+  (* WORKED IN CLASS *)
+  intros P Q [HP HNP]. unfold not in HNP.
+  apply HNP in HP. destruct HP. Qed.
+
+Theorem double_neg : forall P : Prop,
+  P -> ~~P.
+Proof.
+  intros P H. unfold not. intros G. apply G. apply H. Qed.
+
+(** double_neg_informal:
+
+   Unfold ~~P as (P → False) → False.
+
+   Assume P. We must show (P → False) → False.
+
+   Assume ¬P (i.e. P → False).
+
+   Apply ¬P to our assumption P — this directly gives False.
+
+   Therefore (P → False) → False, i.e. ~~P. 
+
+    We are inside the world of type theory not Mathematic Logic! *)
+
+(** How to understand implication in typetheory? *)
+
+Theorem contrapositive : forall (P Q : Prop),
+  (P -> Q) -> (~ Q -> ~ P).
+Proof.
+  (* Assume P -> Q, Assume not Q. *)
+  intros P Q H1 H2.
+  unfold not.
+  unfold not in H2.
+  (* Assume P. *)
+  intros HP.
+  apply H1 in HP.
+  apply H2 in HP.
+  destruct HP.
+Qed.
+
+Theorem not_both_true_and_false : forall P : Prop,
+  ~ (P /\ ~ P).
+Proof.
+  intros P.
+  unfold not.
+  intros [HP HnotP].
+  apply HnotP in HP.
+  destruct HP.
+Qed.
+
+(** not_PNP_informal
+   By definition not (P and not P) is (P and P -> False) -> False.
+
+   Assume P and P -> False, we need to show False.
+
+   By P and P -> False we assume False, thus we have proved. *)
+
 
