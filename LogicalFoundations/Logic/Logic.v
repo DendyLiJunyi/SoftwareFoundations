@@ -322,4 +322,173 @@ Qed.
 
    By P and P -> False we assume False, thus we have proved. *)
 
+Theorem de_morgan_not_or : forall (P Q : Prop),
+  ~ (P \/ Q) -> ~ P /\ ~ Q.
+Proof.
+  intros P Q.
+  unfold not.
+  intros H.
+  split.
+  - intros HP.
+    apply H.
+    left. apply HP.
+  - intros HQ.
+    apply H.
+    right. apply HQ.
+Qed.
+
+Lemma not_S_pred_n : ~ (forall n : nat, S (pred n) = n).
+Proof.
+  unfold not.
+  intros H.
+  specialize H with (n := 0).
+  (* 0 has no pred. *) 
+  discriminate H.
+Qed.
+
+(** ex_falso_quodlibet can change the goal to false. *)
+Theorem not_true_is_false' : forall b : bool,
+  b <> true -> b = false.
+Proof.
+  intros [] H. (* note implicit destruct b here! *)
+  - (* b = true *)
+    unfold not in H.
+    exfalso. (* <=== *)
+    apply H. reflexivity.
+  - (* b = false *) reflexivity.
+Qed.
+
+(** ** Truth ** **)
+(** I is the constant for True. *)
+Lemma True_is_true : True.
+Proof. apply I. Qed.
+
+(** True is useful when defining complex Props. *)
+Definition disc_fn (n : nat) : Prop :=
+  match n with
+  | 0 => True
+  | S _ => False
+  end.
+
+Theorem disc_example : forall n,
+  ~ (0 = S n).
+Proof.
+  intros n contra.
+  (* assume a fact. *)
+  assert (H : disc_fn 0). { simpl. apply I. }
+  (* rewrite the fact by a contradiction. *)
+  rewrite contra in H.
+  (* obtain another fact. *)
+  simpl in H.
+  apply H.
+Qed.
+
+(** Since two constructors are not the same, when we have an equality states two constructors are same, we can use pattern matching skill to define one of them to be true another one to be false. *)
+Definition disc_fn' {X : Type} (x : list X) : Prop :=
+  match x with
+  | nil => True
+  | x :: xs => False
+  end.
+
+Theorem nil_is_not_cons : forall X (x : X) (xs : list X),
+  ~ (nil = x :: xs).
+Proof.
+  intros X x xs.
+  unfold not.
+  intros H.
+  assert (H1 : @disc_fn' X nil). { apply I. }
+  rewrite -> H in H1.
+  simpl in H1.
+  apply H1.
+Qed.
+
+(** ** Logical Equivalence ** **)
+(** Print is used to print all the related information. *)
+Print "<->".
+
+Theorem iff_sym : forall P Q : Prop,
+  (P <-> Q) -> (Q <-> P).
+Proof.
+  intros P Q [HAB HBA].
+  unfold iff.
+  split.
+  - apply HBA.
+  - apply HAB.
+Qed.
+
+Lemma not_true_iff_false : forall b,
+  b <> true <-> b = false.
+Proof.
+  intros b. split.
+  - apply not_true_is_false'.
+  - intros H. rewrite -> H. unfold not. intros H'. discriminate H'.
+Qed.
+
+(** apply with <->. *)
+Lemma apply_iff_example1 :
+  forall P Q R : Prop,
+  (P <-> Q) -> (Q -> R) -> (P -> R).
+Proof.
+  intros P Q R [HPQ HQP] HQR HP.
+  apply HQR. apply HPQ. apply HP.
+Qed.
+
+Lemma apply_iff_example2 :
+  forall P Q R : Prop,
+  (P <-> Q) -> (P -> R) -> (Q -> R).
+Proof.
+  intros P Q R [HPQ HQP] HPR HQ.
+  apply HPR. apply HQP. apply HQ.
+Qed.
+
+Theorem iff_refl : forall P : Prop,
+  P <-> P.
+Proof.
+  intros P.
+  unfold iff.
+  split.
+  - intros H. apply H.
+  - intros H. apply H.
+Qed.
+
+Theorem iff_trans : forall P Q R : Prop,
+  (P <-> Q) -> (Q <-> R) -> (P <-> R).
+Proof.
+  intros P Q R [HPQ HQP] [HQR HRQ].
+  split.
+  - (* P -> R *)
+    intros HP.
+    apply HPQ in HP.
+    apply HQR in HP.
+    apply HP.
+  - (* R -> P *)
+    intros HR.
+    apply HRQ in HR.
+    apply HQP in HR as HP.
+    apply HP.
+Qed.
+
+Theorem or_distributes_over_and : forall P Q R : Prop,
+  P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
+Proof.
+  intros P Q R.
+  split.
+  - intros HPQR.
+    split.
+    + destruct HPQR as [HP | HQR].
+      ++ left. apply HP.
+      ++ destruct HQR as [HQ HR].
+         +++ right. apply HQ.
+    + destruct HPQR as [HP | HQR].
+      ++ left. apply HP.
+      ++ destruct HQR as [HQ HR].
+         right. apply HR.
+  - intros [[HP1 | HQ] [HP2 | HR]].
+    + left. apply HP1.
+    + left. apply HP1.
+    + left. apply HP2.
+    + right. split.
+      ++ apply HQ.
+      ++ apply HR.
+Qed.
 
