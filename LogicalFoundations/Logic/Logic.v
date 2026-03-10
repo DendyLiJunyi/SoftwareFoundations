@@ -550,4 +550,144 @@ Proof.
 Qed.
 
 (** ** Existential Quantification ** **)
+(** To prove a statement of exists x, P, we must show P holds for some specific choice for x(witness of the existential.) *)
+
+Definition Even x := exists n : nat,
+  x = double n.
+Check Even : nat -> Prop.
+
+Lemma four_is_Even : Even 4.
+Proof.
+  unfold Even.
+  exists 2.
+  reflexivity.
+Qed.
+
+(** existential hypothesis can be destructed. *)
+Theorem exists_example_2 : forall n,
+  (exists m, n = 4 + m) ->
+  (exists o, n = 2 + o).
+Proof.
+  intros n [m Hm].
+  rewrite -> Hm.
+  exists (2 + m).
+  reflexivity.
+Qed.
+
+Theorem dist_not_exists : forall (X : Type) (P : X -> Prop),
+  (forall x, P x) -> ~ (exists x, ~ P x).
+Proof.
+  intros X P H.
+  unfold not.
+  intros [x Hx].
+  specialize H with (x := x).
+  apply Hx in H.
+  apply H.
+Qed.
+
+Theorem dist_exists_or : forall (X : Type) (P Q : X -> Prop),
+  (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
+Proof.
+  intros X P Q.
+  split.
+  - intros [x [HP | HQ]].
+    + left. exists x. apply HP.
+    + right. exists x. apply HQ.
+  - intros [[x HP] | [x HQ]].
+    + exists x. left. apply HP.
+    + exists x. right. apply HQ.
+Qed.
+
+Theorem leb_geb_eq : forall n m, (S n <=? m) = false /\ (n <=? m) = true -> n = m.
+Proof.
+  induction n as [| n' IH].
+  - induction m as [| m' IHm].
+    + reflexivity.
+    + intros [H1 H2].
+      simpl in H1. discriminate H1.
+  - induction m as [| m' IHm].
+    + intros [H1 H2].
+      simpl in H2. discriminate.
+    + intros [H1 H2].
+      simpl in H2, H1.
+      f_equal.
+      apply IH. split.
+      ++ apply H1.
+      ++ apply H2.
+Qed.
+
+Theorem leb_plus_exists : forall n m, n <=? m = true ->
+  exists x, m = n + x.
+Proof.
+  intros [| n'].
+  - induction m as [| m' IH].
+    + exists 0. 
+      reflexivity.
+    + intros H. exists (S m'). reflexivity.
+  - induction m as [| m' IH].
+    + intros H.
+      simpl in H. discriminate H.
+    + intros H. simpl in H. destruct (S n' <=? m') eqn:E.
+      ++ assert (I : true = true). { reflexivity. } apply IH in I. destruct I as [x Hx]. exists (S x). rewrite -> Hx. simpl. f_equal. symmetry. apply Nat.add_succ_r.
+      ++ assert (eq : m' = n'). { symmetry. apply leb_geb_eq. split. apply E. apply H. }
+         exists 0. rewrite <- eq. simpl. rewrite add_0_r. reflexivity.
+Qed.
+
+(** from two things which haven't got a direct connection, one need to use induction to build the connection. *)
+
+Theorem leb_refl : forall n,
+  n <=? n = true.
+Proof.
+  induction n as [| n' IH].
+  - reflexivity.
+  - simpl. apply IH.
+Qed.
+
+Theorem leb_increase : forall n m,
+  n <=? n + m = true.
+Proof.
+  induction n as [| n' IH].
+  - induction m.
+    + reflexivity.
+    + reflexivity.
+  - intros m.
+    simpl. apply IH.
+Qed.
+
+Theorem plus_exists_leb : forall n m, (exists x, m = n + x) -> n <=? m = true.
+Proof.
+  (* forget to make the induction hypothesis general! *)
+  intros n m [x H].
+  induction n as [| n' IH].
+  - destruct m as [| m'].
+    + reflexivity.
+    + reflexivity.
+  - induction m as [| m'].
+    + discriminate H.
+    + rewrite -> H. simpl in H. injection H as H1. simpl. destruct x as [| x'].
+      ++ rewrite add_0_r. apply leb_refl.
+      ++ simpl. apply leb_increase.
+Qed.
+
+(** better way make the induciton more general! *)
+Theorem leb_plus_exists' : forall n m, n <=? m = true -> exists x, m = n + x.
+Proof.
+  induction n as [| n' IH].
+  - intros m _. exists m. reflexivity.
+  - intros m H. destruct m as [| m'].
+    + simpl in H. discriminate.
+    + simpl in H. apply IH in H. destruct H as [x Hx].
+      exists x. simpl. rewrite Hx. reflexivity.
+Qed.
+
+Theorem plus_exists_leb' : forall n m, (exists x, m = n + x) -> n <=? m = true.
+Proof.
+  induction n as [| n' IH].
+  - intros m _. reflexivity.
+  - intros m [x Hx]. destruct m as [| m'].
+    + simpl in Hx. discriminate.
+    + simpl. apply IH. exists x. simpl in Hx. injection Hx as Hx'. apply Hx'.
+Qed.
+
+(** * Programming with Propositions * **)
 
