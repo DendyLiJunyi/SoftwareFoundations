@@ -691,3 +691,35 @@ Qed.
 
 (** * Programming with Propositions * **)
 
+(** Defining complex propositions from simpler ones. *)
+
+(** An element x occurs in a list l. *)
+Fixpoint In {A : Type} (x : A) (l : list A) : Prop :=
+  match l with
+  | [] => False
+  | x' :: l' => x = x' \/ In x l'
+  end.
+
+(* Prove a proposition. *)
+Example In_example_1 : In 4 [1; 2; 3; 4; 5].
+Proof.
+  simpl. right. right. right. left. reflexivity.
+Qed.
+
+Example In_example_2 :
+  forall n, In n [2; 4] ->
+  exists n', n = 2 * n'.
+Proof.
+  intros n. intros P. unfold In in P. destruct P as [P1 | [P2 | P3]].
+  - exists 1. rewrite -> P1. reflexivity.
+  - exists 2. rewrite -> P2. reflexivity.
+  - exfalso. apply P3.
+Qed.
+
+(** A statement is formally written doesn't mean it is provable. *)
+Example In_example_2' :
+  forall n, In n [1; 4] ->
+  exists n', n = 2 * n'.
+Proof.
+Abort.
+
