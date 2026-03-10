@@ -1,3 +1,4 @@
+From Stdlib Require Import Setoids.Setoid.
 From LogicalFoundations Require Export Poly.
 From LogicalFoundations Require Export ProofByInduction.
 
@@ -491,4 +492,62 @@ Proof.
       ++ apply HQ.
       ++ apply HR.
 Qed.
+
+
+(** ** Setoids and Logical Equivalence ** **)
+(** setoid is a set equipped with an equivalence relation. 
+
+   reflexive;
+   symmetric;
+   transitive;
+
+   This allows us to rewrite when x = y.
+
+   Since <-> is an equivalence relation, we can also use rewrite on it. *)
+
+Lemma mul_eq_0 : forall n m,
+  n * m = 0 <-> n = 0 \/ m = 0.
+Proof.
+  intros n m.
+  split.
+  - intro H.
+    + destruct n as [| n'].
+      ++ left. reflexivity.
+      ++ right. destruct m as [| m'].
+         +++ reflexivity.
+         +++ discriminate H.
+  - intros [Hn | Hm].
+    + rewrite -> Hn. reflexivity.
+    + rewrite -> Hm. apply mul_0_r.
+Qed.
+
+Theorem or_assoc :
+  forall P Q R : Prop,
+  P \/ (Q \/ R) <-> (P \/ Q) \/ R.
+Proof.
+  intros P Q R.
+  split.
+  - intros [HP | [HQ | HR]].
+    + left. left. apply HP.
+    + left. right. apply HQ.
+    + right. apply HR.
+  - intros [[HP | HQ] | HR].
+    + left. apply HP.
+    + right. left. apply HQ.
+    + right. right. apply HR.
+Qed.
+
+(** rewrite on <-> *)
+Lemma mul_eq_0_ternary :
+  forall n m p,
+  n * m * p = 0 <-> n = 0 \/ m = 0 \/ p = 0.
+Proof.
+  intros n m p.
+  rewrite mul_eq_0.
+  rewrite mul_eq_0.
+  rewrite <- or_assoc.
+  reflexivity.
+Qed.
+
+(** ** Existential Quantification ** **)
 
