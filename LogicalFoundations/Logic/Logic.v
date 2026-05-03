@@ -723,3 +723,235 @@ Example In_example_2' :
 Proof.
 Abort.
 
+Theorem In_map :
+  forall (A B : Type) (f : A -> B) (l : list A) (x : A),
+  In x l ->
+  In (f x) (map f l).
+Proof.
+  intros A B f.
+  induction l as [| h t IH].
+  - intros x P.
+    simpl. simpl in P.
+    apply P.
+  - intros x H.
+    simpl.
+    simpl in H. destruct H as [Hxh | Hxt].
+    + left. f_equal. apply Hxh.
+    + right. specialize IH with (x := x).
+      apply IH in Hxt. apply Hxt.
+Qed.
+
+Theorem In_map_iff' :
+  forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+  In y (map f l) <->
+  exists x, f x = y /\ In x l.
+Proof.
+  intros A B f.
+  induction l as [| h t IH].
+  - intros y.
+    split.
+    + intros H. exfalso. simpl in H. apply H.
+    + intros [x [H1 H2]]. simpl. simpl in H2. apply H2.
+  - intros y.
+    split.
+    + intros H.
+Abort.
+
+(** Why don't need generalize induction Hypothesis here? *)
+Theorem In_map_iff :
+  forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+  In y (map f l) <->
+  exists x, f x = y /\ In x l.
+Proof.
+  intros A B f l y. split.
+  - induction l as [|x l' IHl'].
+    + intros H. simpl in H. exfalso. apply H.
+    + intros H. simpl in H. destruct H as [Hl | Hr].
+      ++ exists x. split.
+         +++ symmetry. apply Hl.
+         +++ simpl. left. reflexivity.
+      ++ apply IHl' in Hr as [x0 [H1 H2]]. 
+         exists x0. split.
+         +++ apply H1.
+         +++ simpl. right. apply H2.
+  - intros [x [Hl Hr]].
+    rewrite <- Hl.
+    apply In_map.
+    apply Hr.
+Qed.
+
+Theorem In_app_iff : forall A l l' (a : A),
+  In a (l ++ l') <-> In a l \/ In a l'.
+Proof.
+  intros A l. induction l as [|a' l' IH].
+  - intros l'' a.
+    split.
+    + intros H. simpl in H. right. apply H.
+    + intros H. simpl. destruct H as [Hl | Hr].
+      ++ simpl in Hl. exfalso. apply Hl.
+      ++ apply Hr.
+  - split.
+      + intros H.
+        simpl in H. simpl. destruct H as [H1 | H2].
+        ++ left. left. apply H1.
+        ++ specialize IH with (l' := l'0).
+           specialize IH with (a := a).
+           destruct IH as [IHl IHr].
+           apply IHl in H2. destruct H2 as [H2l | H2r].
+           +++ left. right. apply H2l.
+           +++ right. apply H2r.
+      + intros H.
+        simpl. simpl in H. 
+        specialize IH with (l' := l'0).
+        specialize IH with (a := a).
+        destruct IH as [IHl IHr].
+        apply or_assoc in H. destruct H as [Hl | Hr].
+        ++ left. apply Hl.
+        ++ apply IHr in Hr. right. apply Hr.
+Qed.
+
+(** P n := Property P holds of n. *)
+
+(** Don't know how to express property of some elements not hold.
+   I don't know what does this P mean.
+   Okay I know, we can use True and False to represent a proposition is correct or not.*)
+Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | [ ] => True
+  | h :: t => P h /\ All P t
+  end.
+
+Theorem All_In :
+  forall T (P : T -> Prop) (l : list T),
+  (forall x, In x l -> P x) <->
+    All P l.
+Proof.
+  intros T P l.
+  induction l as [| h l' IHl'].
+  - split.
+    + intros H1. reflexivity.
+    + intros H2 x H3. simpl in H3. exfalso. apply H3.
+  - split.
+    + intros H1. simpl. split.
+      ++ specialize H1 with (x := h).
+         apply H1. simpl. left. reflexivity.
+      ++ apply IHl'. intros x H2. apply H1. simpl. right. apply H2.
+    + intros H1 x H2. simpl in H1. destruct H1 as [H1a H1b]. destruct IHl' as [IHl'1 IHl'2].
+Abort.
+
+(** I think I state the problem correct. *)
+
+Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
+  fun n => if odd n then Podd n else Peven n.
+
+Theorem combine_odd_even_intro :
+  forall (Podd Peven : nat -> Prop) (n : nat),
+  (odd n = true -> Podd n) ->
+  (odd n = false -> Peven n) ->
+    combine_odd_even Podd Peven n.
+Proof.
+  intros Podd Peven n H1 H2.
+  induction n as [| n' IHn'].
+  - unfold combine_odd_even. simpl. apply H2. unfold odd. reflexivity. - unfold combine_odd_even. 
+Abort.
+(** Don't know how to simplify if else expression. *)
+
+Theorem combine_odd_even_elim_odd :
+  forall (Podd Peven : nat -> Prop) (n : nat),
+  combine_odd_even Podd Peven n ->
+  odd n = true ->
+    Podd n.
+Proof.
+  intros Podd Peven n H1 H2.
+  induction n as [| n' IHn'].
+  - unfold combine_odd_even in H1. rewrite -> H2 in H1. apply H1.
+  - unfold combine_odd_even in H1. rewrite -> H2 in H1. apply H1.
+Qed.
+
+Theorem combine_odd_even_elim_even :
+  forall (Podd Peven : nat -> Prop) (n : nat),
+  combine_odd_even Podd Peven n ->
+  odd n = false ->
+    Peven n.
+Proof.
+  intros Podd Peven n H1 H2.
+  induction n as [| n' IHn'].
+  - unfold combine_odd_even in H1.
+    rewrite -> H2 in H1.
+    apply H1.
+  - unfold combine_odd_even in H1.
+    rewrite -> H2 in H1.
+    apply H1.
+Qed.
+
+(** ** Applying Theorem to Arguments ** **)
+(** Rocq treats proofs as first-class objects.
+   Podd : nat -> Prop is a property which a natural number might hold. *)
+
+Check plus : nat -> nat -> nat.
+Check @rev : forall X, list X -> list X.
+
+Check @rev.
+(** if we leave off the colon and type, Check will print theses types. 
+
+   add_comm refers to proof object. 
+
+   logical derivation establishing the truth of the statement.
+
+   To apply a theorem, one only need to match the type. *)
+
+(** Is it currying? *)
+Lemma add_comm3_take3 :
+  forall x y z, x + (y + z) = (z + y) + x.
+Proof.
+  intros x y z.
+  rewrite (add_comm x (y + z)).
+  rewrite (add_comm y z).
+  reflexivity.
+Qed.
+
+(** Use theorem as a function.
+   Of course we can use our little currying technics. 
+
+   Wildcard _ can also be used in theorem application. *)
+
+Theorem in_not_nil :
+  forall A (x : A) (l : list A), In x l -> l <> [].
+Proof.
+  intros A x l Hxl.
+  unfold not.
+  intros Hl.
+  rewrite -> Hl in Hxl.
+  simpl in Hxl.
+  apply Hxl.
+Qed.
+
+Lemma in_not_nil_42_take3 :
+  forall l : list nat, In 42 l -> l <> [].
+Proof.
+  intros l H.
+  apply in_not_nil with (x := 42).
+  apply H.
+Qed.
+
+Lemma in_not_nil_42_take4 :
+  forall l : list nat, In 42 l -> l <> [].
+Proof.
+  intros l H.
+  apply (in_not_nil nat 42).
+  apply H.
+Qed.
+
+Lemma in_not_nil_42_take5 :
+  forall l : list nat, In 42 l -> l <> [].
+Proof.
+  intros l H.
+  apply (in_not_nil _ _ _ H).
+Qed.
+
+(**
+  in_not_nil : A (x : A) (l : list A), P -> Q *)
+
+(** ** Working with Decidable Properties ** **)
+
+
