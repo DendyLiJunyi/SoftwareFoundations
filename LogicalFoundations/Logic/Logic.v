@@ -1,6 +1,8 @@
 From Stdlib Require Import Setoids.Setoid.
+From Stdlib Require Import Classes.Morphisms_Prop.
 From LogicalFoundations Require Export Poly.
 From LogicalFoundations Require Export ProofByInduction.
+From LogicalFoundations Require Export Tactics.
 
 (** The propositions and proofs we worked on so far depends on the equality propositions(e1 = e2). 
 
@@ -954,4 +956,206 @@ Qed.
 
 (** ** Working with Decidable Properties ** **)
 
+(** Difference between bool and Prop
+
+   Every Rocq expression of type bool can be simplified in a finite number of steps to either true of false.
+
+   A function of type nat -> bool must be a function takes a nat and yield either true or false in finite time.
+
+   Prop includes both decidable and undecidable mathematical propositions.
+
+   Why propositional equality can do rewrite?
+
+   We have two ways to formalize a property:
+   1. As a boolean computation : even 42 = true
+   2. As a function into Prop : Even 42
+*)
+
+(** boolean computation is the same as the function way *)
+Lemma even_double : forall k, even (double k) = true.
+Proof.
+  intros k.
+  simpl.
+  induction k as [| k' Ih].
+  + reflexivity.
+  + rewrite <- Ih.
+    reflexivity.
+Qed.
+
+Lemma even_double_conv : forall n, exists k,
+  n = if even n then double k else S (double k).
+Proof.
+  intros n.
+  induction n as [| n'].
+  - exists 0. reflexivity.
+  - rewrite -> (even_S n'). destruct IHn'.
+    destruct (even n') eqn:E.
+    + simpl. exists x. rewrite <- H. reflexivity.
+    + simpl. rewrite -> H. exists (S x). reflexivity.
+Qed.
+
+(** For different cases can use different value. Make the statement general is really important. *)
+
+Theorem even_bool_prop : forall n,
+  even n = true <-> Even n.
+Proof.
+  intros n.
+  unfold iff.
+  split.
+  - intros H.
+    destruct (even_double_conv n) as [k Hk].
+    rewrite -> Hk.
+    unfold Even.
+    exists k.
+    rewrite -> H.
+    reflexivity.
+  - intros [k Hk].
+    rewrite -> Hk.
+    apply even_double.
+Qed.
+
+Theorem eqb_eq : forall n1 n2 : nat,
+  n1 =? n2 = true <-> n1 = n2.
+Proof.
+  intros n1 n2.
+  unfold iff.
+  split.
+  - apply eqb_true.
+  - intros H. rewrite -> H. apply eqb_refl.
+Qed.
+
+(** Proposition way or boolean way?
+
+   - Booleans are more useful for defining functions.
+
+   Props can't be test true or false.
+  *)
+
+Fail
+Definition is_even_prime n :=
+  if n = 2 then true
+  else false.
+(* "n = 2" has type Prop *)
+
+(** For program extraction's usage, in Rocq's core language it is designed so that every function if can express is computable and total. *)
+
+(** Computable & Total **)
+
+Definition is_even_prime n :=
+  if n =? 2 then true
+  else false.
+
+(** Express in Prop is much easier but stating facts using booleans is enabling some proof automation - Proof by reflection *)
+
+(** Prop **)
+Example even_1000 : Even 1000.
+Proof.
+  unfold Even.
+  exists 500.
+  reflexivity.
+Qed.
+
+(** Boolean **)
+Example even_1000' : even 1000 = true.
+Proof.
+  reflexivity.
+Qed.
+
+(** How do we define = in Rocq? **)
+
+(**
+
+Inductive eq {A : Type} (x : A) : A -> Prop :=
+  | eq_refl : eq x x.
+
+Notation "x = y" := (eq x y) : type_scope.
+
+= is propositional equality in Rocq
+
+Definition equality is being realize inside Rocq's kernel, it can't be build or being proved.
+*)
+
+(** negation of boolean is staightforward to prove. *)
+Example not_even_1001 : even 1001 = false.
+Proof.
+  reflexivity.
+Qed.
+
+(** proposition negation can be difficult to work with. We have the trade-off here. *)
+Example not_even_1001'' : not (Even 1001).
+Proof.
+  unfold not.
+  intros H.
+  unfold Even in H.
+  (* We need indution on the hypothesis and then prove that all the cases lead to contradiction. *)
+Abort.
+
+(** We can prove this by changing propositions to booleans. **)
+
+Example not_even_1001' : not (Even 1001).
+Proof.
+  Check even_bool_prop.
+  Check (even_bool_prop 1001).
+  intros H.
+  rewrite <- even_bool_prop in H.
+  (* I can't understand why I need to intro first, then rewrite. *)
+  simpl in H.
+  discriminate H.
+  Qed.
+
+(** Generally, knowing (n =? m) = true is of little help in the middle of a proof involving n and m. **)
+
+  Lemma plus_eqb_example : forall n m p : nat, n =? m = true -> n + p =? m + p = true.
+  Proof.
+    intros n m p H.
+    rewrite eqb_eq in H.
+    rewrite -> H.
+    rewrite eqb_eq.
+    reflexivity.
+  Qed.
+
+(** One of the main tricks here is to transfer between the boolean world and the proposition world. **)
+
+Theorem andb_true_iff : forall b1 b2 : bool, b1 && b2 = true <-> b1 = true /\ b2 = true.
+Proof.
+  intros b1 b2.
+  unfold iff.
+  split.
+  - intros H. unfold andb in H.
+    split.
+    + destruct b1 eqn:E.
+      ++ reflexivity.
+      ++ discriminate H.
+    + destruct b1 eqn:E.
+      ++ apply H.
+      ++ discriminate H.
+  - intros H.
+    destruct H as [H1 H2].
+    unfold andb.
+    rewrite -> H1. apply H2.
+Qed.
+
+(* Markdown environment *)
+(** *)
+
+Theorem orb_true_iff : forall b1 b2,
+  b1 || b2 = true <-> b1 = true \/ b2 = true.
+Proof.
+  (* Destruct booleans will make it easier. *)
+  intros b1 b2.
+  destruct b1, b2.
+  - split.
+    + intros H. left. reflexivity.
+    + intros H. unfold orb. reflexivity.
+  - split.
+    + intros H. simpl in H. left. reflexivity.
+    + intros H. simpl. reflexivity.
+  - split.
+    + intros H.
+      right. reflexivity.
+    + intros H. simpl. reflexivity.
+  - split.
+    + intros H. simpl in H. discriminate H.
+    + intros H. destruct H. discriminate. discriminate.
+Qed.
 
