@@ -94,7 +94,7 @@ Qed.
 
 (** ### Transitive Closure
 
-   The reflexive and transitive closure of a relation R is the smallest relation that contains R and that is reflexive and transitive. 
+   The transitive closure of a relation R is the smallest relation that contains R and that is reflexive and transitive. 
 
    We can observe few facts:
    1. R x y holds implies clos_trans R x y holds
@@ -137,4 +137,42 @@ Proof.
   - apply t_step. apply po_CM.
 Qed.
 
+(** #### Reflexive and Transitive Closure 
 
+   Reflexive and Transitive Closure is the smallest relation that contains R and that is reflexive and transitive. *)
+
+Inductive clos_refl_trans {X : Type} (R : X -> X -> Prop) : X -> X -> Prop :=
+  | rt_step (x y : X) :
+      R x y -> clos_refl_trans R x y
+  | rt_refl (x : X) :
+      clos_refl_trans R x x
+  | rt_trans (x y z : X) :
+      clos_refl_trans R x y ->
+      clos_refl_trans R y z ->
+      clos_refl_trans R x z.
+
+(** Compatible with Collatz step function. *)
+
+(* R := eq (csf n) m *)
+
+Definition cs (n m : nat) : Prop := csf n = m.
+
+Definition cms n m := clos_refl_trans cs n m.
+
+Conjecture collatz' : forall n, n <> 0 -> cms n 1.
+
+(** It feels like Collatz conjecture and a reflexive and transitive relation just fit each other. *)
+
+Inductive clos_symm_refl_trans {X : Type} (R : X -> X -> Prop) : X -> X -> Prop :=
+  | srt_step (x y : X) :
+      R x y -> clos_symm_refl_trans R x y
+  | srt_refl (x : X) :
+      clos_symm_refl_trans R x x
+  | srt_trans (x y z : X) :
+      clos_symm_refl_trans R x y ->
+      clos_symm_refl_trans R y z ->
+      clos_symm_refl_trans R x z
+  | srt_symm (x y : X) :
+      clos_symm_refl_trans R x y -> clos_symm_refl_trans R y x.
+
+(** They are just rules we can play with, when one think of the proof process. *)
