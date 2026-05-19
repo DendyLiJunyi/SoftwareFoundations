@@ -226,7 +226,7 @@ Definition not (P : Prop) := P -> False.
 
 Check False.
 
-Notation "~ x" := (not x) : type_scope.
+(* Notation "~ x" := (not x) : type_scope. *)
 
 Theorem ex_falso_quodlibet :
   forall (P : Prop),
@@ -251,7 +251,7 @@ Qed.
    P -> False is true
    So we have a contradiction. *)
 
-Notation "x <> y" := (~(x = y)) : type_scope.
+(* Notation "x <> y" := (~(x = y)) : type_scope. *)
 
 Theorem zero_not_one : 0 <> 1.
 Proof.
