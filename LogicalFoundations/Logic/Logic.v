@@ -1159,3 +1159,211 @@ Proof.
     + intros H. destruct H. discriminate. discriminate.
 Qed.
 
+Theorem eqb_neq : forall x y : nat,
+  x =? y = false <-> x <> y.
+Proof.
+  intros x y.
+  split.
+  - intros H.
+    rewrite <- not_true_iff_false in H.
+    unfold not.
+    intros Heq.
+    apply H.
+    rewrite <- Heq.
+    Search "=?".
+    apply eqb_refl.
+  - unfold not.
+    intros H.
+    Search "=?".
+    destruct (x =? y) eqn:E.
+    + Search "=?".
+      apply eqb_true in E.
+      apply H in E.
+      contradiction.
+    + reflexivity.
+Qed.
+
+(** 这里用到了一些小技巧：
+   1. Search 的使用
+   2. 对 pattern 进行 destruct *)
+
+Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool) (l1 l2 : list A) : bool :=
+  match l1 with
+  | nil => match l2 with
+           | nil => true
+           | h :: t => false
+           end
+  | h1 :: t1 => match l2 with
+                | nil => false
+                | h2 :: t2 => if eqb h1 h2 then eqb_list eqb t1 t2 else eqb h1 h2
+                end
+  end.
+
+Theorem eqb_list_true_iff :
+  forall A (eqb : A -> A -> bool),
+  (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) -> forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
+Proof.
+  intros A eqb Ha l1 l2.
+  split.
+  (* eqb_list eqb l1 l2 = true -> l1 = l2 *)
+  - intros Hl.
+    destruct l1 eqn:E1.
+    + simpl in Hl.
+      destruct l2.
+      ++ reflexivity.
+      ++ discriminate Hl.
+    + simpl in Hl.
+      destruct l2 eqn:E2.
+      ++ discriminate Hl.
+      ++ specialize Ha with (a1 := x).
+         specialize Ha with (a2 := x0).
+         destruct (eqb x x0) eqn:Eeqb.
+  (* l1 = l2 -> eqb_list eqb l1 l2 = true *)
+Abort.
+
+(** Feel like on the wrong way. But I think I'm doing the definition right. *)
+
+(** 
+   ## The Logic of Rocq
+   Rocq's logical core is the Calculus of Inductive Constructions.
+
+   ### Functional Extensionality
+
+   Equality in Rocq is polymorphic.
+ *)
+
+Example function_equality_ex1 :
+  (fun x => 3 + x) = (fun x => (pred 4) + x).
+Proof.
+  reflexivity.
+Qed.
+
+(** forall x, f x = g x -> f = g is so-called function extensionality. 
+
+   extensionality is the property pertains with the object's observable behavior. 
+
+   extensionality is not build-in for Rocq. *)
+
+Axiom functional_extensionality : forall {X Y : Type} {f g : X -> Y}, (forall (x : X), f x = g x) -> f = g.
+
+(** Axiom = Theorem with admitted. *)
+
+Example function_equality_ex2 :
+  (fun x => plus x 1) = (fun x => plus 1 x).
+Proof.
+  apply functional_extensionality. intros x.
+  apply add_comm.
+Qed.
+
+(* Print Assumptions help us to check if a proof relies on any additional axioms. *)
+Print Assumptions function_equality_ex2.
+
+(** #### Tail-recursive for list-reversing *)
+
+Fixpoint rev_append {X} (l1 l2 : list X) : list X :=
+  match l1 with
+  | [] => l2
+  | x :: l1' => rev_append l1' (x :: l2)
+  end.
+
+(* Tail-recursive just means recursive call is the last operation. *)
+
+Definition tr_rev {X} (l : list X) : list X :=
+  rev_append l [].
+
+Lemma rev_append_app : forall X (l1 l2 : list X), rev_append l1 l2 = rev_append l1 [] ++ l2.
+Proof.
+  intros X l1.
+  induction l1 as [| h t IH].
+  - intros l2. reflexivity.
+  - induction l2 as [| h2 t2 IH2].
+    + Search "[ ]".
+      rewrite -> app_nil_r.
+      reflexivity.
+    + specialize IH with (l2 := h :: h2 :: t2).
+      simpl. rewrite -> IH.
+Admitted.
+
+(** 我就是把原命题换了一个形式来做了一遍而已 *)
+
+
+Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
+Proof.
+  intros X.
+  apply functional_extensionality.
+  intro l.
+  (* induction l as [|h t IHt] eqn:E. *)
+  (* If I need eqn:E, then the weird thing also happens. *)
+  induction l as [| h t IHt].
+  - unfold tr_rev. reflexivity.
+    (* l = h :: t*)
+  - unfold tr_rev in IHt. unfold tr_rev. simpl. rewrite <- IHt.
+    (* what does l = t here mean? this means if l is a shorter list. *)
+    + (* need a stronger version lemma. *)
+      apply rev_append_app.
+Qed.
+
+(** #### Classical vs. Constructive Logic *)
+
+Definition excluded_middle := forall P : Prop, P \/ ~ P.
+
+(* excluded_middle can't be derived in Rocq.
+
+   To prove P \/ ~ P, we need to prove one of the P or ~ P.
+
+   But forall P is an arbitrary proposition which we know nothing about. *)
+
+Theorem restricted_excluded_middle : forall P b, (P <-> b = true) -> P \/ ~ P.
+Proof.
+  intros P [] H.
+  - left. rewrite -> H. reflexivity.
+  - right. unfold not. intros Hp. rewrite -> H in Hp. discriminate.
+Qed.
+
+Theorem restricted_excluded_middle_eq : forall (n m : nat),
+  n = m \/ n <> m.
+Proof.
+  intros n m.
+  (* P := n = m *)
+  apply (restricted_excluded_middle (n = m) (n =? m)).
+  symmetry.
+  apply eqb_eq.
+Qed.
+
+(** Advantage of not assuming excluded middle:
+
+   Can make stronger claims, i.e. every proof of existence is constructive.
+
+   Logics like Rocq's, which don't assume the excluded middle, are referred to as constructive logics. 
+
+   Logical systems such as ZFC, are referred to as classical.
+
+   I feel like constructive means, in exists b, P b, we must give a b. 
+
+   Contradiction need excluded middle, to show contradiction is the same to show we can freely move double negation. *)
+
+Theorem excluded_middle_irrefutable : forall (P : Prop), ~ ~ (P \/ ~ P).
+Proof.
+  intros P.
+  unfold not.
+  intros H. 
+  apply H.
+  right. intros HP. apply H. left. apply HP.
+Qed.
+
+Theorem not_exists_dist :
+  excluded_middle ->
+  forall (X : Type) (P : X -> Prop),
+  ~ (exists x, ~ P x) -> (forall x, P x).
+Proof.
+  intros H X P Hx a.
+  unfold excluded_middle in H.
+  specialize (H (P a)).
+  destruct H as [H' | H'N].
+  - apply H'.
+  - exfalso.
+    apply Hx.
+    exists a.
+    apply H'N.
+Qed.
+
