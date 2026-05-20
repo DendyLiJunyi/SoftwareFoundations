@@ -346,3 +346,45 @@ Qed.
 
 (** Rocq has inversion tactic for us to do this job. *)
 
+Theorem evSS_ev' : forall n,
+  ev (S (S n)) -> ev n.
+Proof.
+  intros n E. inversion E as [| n' E' Hnn].
+  apply E'.
+Qed.
+
+(** inversion looks like destruct a proposition into it's constructors. *)
+
+Theorem one_not_even : ~ ev 1.
+Proof.
+  intros H. apply ev_inversion in H. destruct H as [| [m [Hm _]]].
+  - discriminate H.
+  - discriminate Hm.
+Qed.
+
+Theorem one_not_even' : ~ ev 1.
+Proof. intros H. inversion H. Qed.
+
+(** inversion seems like a little bit stronger. *)
+
+Theorem SSSSev_even : forall n,
+  ev (S (S (S (S n)))) -> ev n.
+Proof.
+  intros n H.
+  inversion H as [| n' Hn' E].
+  inversion Hn' as[| n'' Hn'' E'].
+  apply Hn''.
+Qed.
+
+(* inconsistant *)
+Theorem ev5_nonsense :
+  ev 5 -> 2 + 2 = 9.
+Proof.
+  intros H.
+  inversion H as [| n Hn E].
+  inversion Hn as [| n' Hn' E'].
+  inversion Hn' as [| n'' Hn'' E''].
+  (* I'm kind of confuse why do inversion suddenly solve the goal. *)
+Qed.
+
+
