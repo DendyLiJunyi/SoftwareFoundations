@@ -176,3 +176,173 @@ Inductive clos_symm_refl_trans {X : Type} (R : X -> X -> Prop) : X -> X -> Prop 
       clos_symm_refl_trans R x y -> clos_symm_refl_trans R y x.
 
 (** They are just rules we can play with, when one think of the proof process. *)
+
+(** #### Permutations
+
+   The beauty of type theory lies in the way we can express so proposition into a set of inductive rules. 
+
+   Permutation is a set of rules where:
+   1. One can swap [a; b; c] [a; c; b]
+   2. One can swap [a; b; c] [b; a; c]
+   3. Perm l1 l2 -> Perm l2 l3 -> Perm l1 l3 *)
+
+Inductive Perm3 {X : Type} : list X -> list X -> Prop :=
+  | perm3_swap12 (a b c : X) :
+      Perm3 [a;b;c] [b;a;c]
+  | perm3_swap23 (a b c : X) :
+      Perm3 [a;b;c] [a;c;b]
+  | perm3_trans (l1 l2 l3 : list X) :
+      Perm3 l1 l2 -> Perm3 l2 l3 -> Perm3 l1 l3.
+
+Example Is_123_Perm : Perm3 [1;2;3] [1;2;3].
+Proof.
+  apply perm3_trans with [2;1;3].
+  apply perm3_swap12.
+  apply perm3_swap12.
+Qed.
+
+(** #### Evenness 
+
+   Two ways of stating a proposition is even:
+   1. even n = true;
+   2. exists k, n = double k. 
+
+   We can also establish the evenness form two rules:
+   1. ev 0
+   2. ev n -> ev (S (S n)) *)
+
+Inductive ev : nat -> Prop :=
+  | ev_0 : ev 0
+  | ev_SS (n : nat) (H : ev n) : ev (S (S n)).
+
+(** Each number can be even according to a separate constructor.
+
+   Difference between inductively defined datatypes and inductively defined definition.
+
+   Here ev : nat -> Prop
+   In stead of a function ev (n : nat) : Prop 
+
+   index or annotation:
+   : nat 
+
+   parameter:
+   nat : 
+
+   It's like defining a Rocq property together with two "evidence constructors" *)
+
+Module EvPlayground.
+
+Inductive ev : nat -> Prop :=
+  | ev_0 : ev 0
+  | ev_SS : forall (n : nat), ev n -> ev (S (S n)).
+
+End EvPlayground.
+
+Theorem ev_4 : ev 4.
+Proof.
+  apply ev_SS.
+  apply ev_SS.
+  apply ev_0.
+Qed.
+
+Theorem ev_plus4 : forall n, ev n -> ev (4 + n).
+Proof.
+  intros n Hn.
+  apply ev_SS.
+  apply ev_SS.
+  apply Hn.
+Qed.
+
+Theorem ev_double : forall n, ev (double n).
+Proof.
+  intros n.
+  induction n as [| n' IHn'].
+  - (* ev (double 0) *)
+    simpl. apply ev_0.
+  - (* ev (double (S n')) *)
+    simpl. apply ev_SS. apply IHn'.
+Qed.
+
+(** #### Constructing Evidence for Permutations *)
+
+Lemma Perm3_rev : Perm3 [1;2;3] [3;2;1].
+Proof.
+  apply perm3_trans with (l2 := [1; 3; 2]).
+  - apply perm3_swap23.
+  - apply perm3_trans with (l2 := [3; 1; 2]).
+    ++ apply perm3_swap12.
+    ++ apply perm3_swap23.
+Qed.
+
+(* use place holder _ *)
+Lemma Perm3_rev' : Perm3 [1;2;3] [3;2;1].
+Proof.
+  apply (perm3_trans _ [1;3;2] _ (perm3_swap23 _ _ _) (perm3_trans _ [3;1;2] _ (perm3_swap12 _ _ _) (perm3_swap23 _ _ _))).
+Qed.
+
+(** Use () to represent hierachy, we get an informal decision tree! *)
+
+Lemma Perm3_ex1 : Perm3 [1;2;3] [2;3;1].
+Proof.
+  apply (perm3_trans _ [3;2;1] _ (Perm3_rev') (perm3_swap12 _ _ _)).
+Qed.
+
+Lemma Perm3_refl : forall (X : Type) (a b c : X), Perm3 [a;b;c] [a;b;c].
+Proof.
+  intros X a b c.
+  apply (perm3_trans _ [b;a;c] _ (perm3_swap12 _ _ _) (perm3_swap12 _ _ _)).
+Qed.
+
+(** ## Using Evidence in Proofs
+
+   If someone gives us evidence E for the proposition ev n, then we know that E must be one of two things:
+   1. E = ev_0 and n = 0, or
+   2. E = ev_SS n' E' and n = S (S n'), where E' is evidence for n'.
+
+   ### Destructing and Inverting Evidence
+
+   We want to analyze the evidence for (ev n) directly. *)
+
+Lemma ev_inversion : forall (n : nat),
+  ev n ->
+  (n = 0) \/ (exists n', n = S (S n') /\ ev n').
+Proof.
+  intros n E. destruct E as [| n' E'] eqn:EE.
+  - (* E = ev_0 : ev_0 *)
+    left. reflexivity.
+  - (* E = ev_SS n' E' : ev (S (S n')) *)
+    right. exists n'. split.
+    + reflexivity.
+    + apply E'.
+Qed.
+
+(* We can handle this just like we handle the datatypes, nothing is different here. *)
+
+(** Facts like this are often called "inversion lemmas". *)
+
+Lemma le_inversion : forall (n m : nat),
+  le n m ->
+  (n = m) \/ (exists m', m = S m' /\ le n m').
+Proof.
+  intros n m H.
+  destruct H as [| n' N' HN'] eqn:EH.
+  - (* n <= n *)
+    left. reflexivity.
+  - (* n' <= S H' *)
+    right. exists N'. split.
+    + reflexivity.
+    + apply HN'.
+Qed.
+
+(** Inversion lemma can help us to structure proofs. *)
+
+Theorem evSS_ev : forall n, ev (S (S n)) -> ev n.
+Proof.
+  intros n H.
+  apply ev_inversion in H. destruct H as [H0 | H1].
+  - discriminate H0.
+  - destruct H1 as [n' [Hnn' H']]. injection Hnn' as Hnn'. rewrite -> Hnn'. apply H'.
+Qed.
+
+(** Rocq has inversion tactic for us to do this job. *)
+
